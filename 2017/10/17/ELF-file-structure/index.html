@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="ELF File Structure"/>
+
+
+
+
+  <meta name="keywords" content="ELF, link&load, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/10/17/ELF-file-structure/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+  <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> ELF File Structure - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          ELF File Structure
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-10-17
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/Linux-kernel/">Linux kernel</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#OVERVIEW"><span class="toc-text">OVERVIEW</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#ELF-Header"><span class="toc-text">ELF Header</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#64-bit"><span class="toc-text">64 bit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#member"><span class="toc-text">member</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Section-Header-Table"><span class="toc-text">Section Header Table</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#32-bit"><span class="toc-text">32 bit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#64-bit-1"><span class="toc-text">64 bit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#member-1"><span class="toc-text">member</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#sh-type-段类型"><span class="toc-text">sh_type : 段类型</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#sh-flag-段标志位"><span class="toc-text">sh_flag : 段标志位</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Symbol-Table"><span class="toc-text">Symbol Table</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#32-bit-1"><span class="toc-text">32 bit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#64-bit-2"><span class="toc-text">64 bit</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#st-info-符号类型及绑定信息"><span class="toc-text">st_info : 符号类型及绑定信息</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#st-shndx-符号所在段"><span class="toc-text">st_shndx : 符号所在段</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="OVERVIEW"><a href="#OVERVIEW" class="headerlink" title="OVERVIEW"></a>OVERVIEW</h2><p>下图定性地描述了ELF文件的总体结构(以32位系统为例), 下文中将详细展开图中的每一项.</p>
+<a id="more"></a>
+<p><img src="./elf_structure.png" alt="ELF structure"></p>
+<h2 id="ELF-Header"><a href="#ELF-Header" class="headerlink" title="ELF Header"></a>ELF Header</h2><p>可用<code>readelf -h</code>查看ELF Header信息. ELF文件的魔数为<code>0x7F454C46</code>, 即<code>\x7fELF</code></p>
+<p>###32 bit</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">elf32_hdr</span> &#123;</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> e_ident[EI_NIDENT];</div><div class="line">    Elf32_Half e_type;</div><div class="line">    Elf32_Half e_machine;</div><div class="line">    Elf32_Word e_version;</div><div class="line">    Elf32_Addr e_entry; <span class="comment">/* Entry point */</span></div><div class="line">    Elf32_Off e_phoff;</div><div class="line">    Elf32_Off e_shoff;</div><div class="line">    Elf32_Word e_flags;</div><div class="line">    Elf32_Half e_ehsize;</div><div class="line">    Elf32_Half e_phentsize;</div><div class="line">    Elf32_Half e_phnum;</div><div class="line">    Elf32_Half e_shentsize;</div><div class="line">    Elf32_Half e_shnum;</div><div class="line">    Elf32_Half e_shstrndx;</div><div class="line">&#125; Elf32_Ehdr;</div></pre></td></tr></table></figure>
+<h3 id="64-bit"><a href="#64-bit" class="headerlink" title="64 bit"></a>64 bit</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">elf64_hdr</span> &#123;</span></div><div class="line">    <span class="keyword">unsigned</span> <span class="keyword">char</span> e_ident[<span class="number">16</span>];  <span class="comment">/* ELF "magic number" */</span></div><div class="line">    Elf64_Half e_type;</div><div class="line">    Elf64_Half e_machine;</div><div class="line">    Elf64_Word e_version;</div><div class="line">    Elf64_Addr e_entry; <span class="comment">/* Entry point virtual address */</span></div><div class="line">    Elf64_Off e_phoff;  <span class="comment">/* Program header table file offset */</span></div><div class="line">    Elf64_Off e_shoff;  <span class="comment">/* Section header table file offset */</span></div><div class="line">    Elf64_Word e_flags;</div><div class="line">    Elf64_Half e_ehsize;</div><div class="line">    Elf64_Half e_phentsize;</div><div class="line">    Elf64_Half e_phnum;</div><div class="line">    Elf64_Half e_shentsize;</div><div class="line">    Elf64_Half e_shnum;</div><div class="line">    Elf64_Half e_shstrndx;</div><div class="line">&#125; Elf64_Ehdr;</div></pre></td></tr></table></figure>
+<h3 id="member"><a href="#member" class="headerlink" title="member"></a>member</h3><table>
+<thead>
+<tr>
+<th style="text-align:left">member</th>
+<th>usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">e_ident</td>
+<td>magic &amp; class &amp; data &amp; verison &amp; OS/ABI &amp; ABI version</td>
+</tr>
+<tr>
+<td style="text-align:left">e_type</td>
+<td>ELF文件类型</td>
+</tr>
+<tr>
+<td style="text-align:left">e_machine</td>
+<td>ELF文件的CPU平台属性</td>
+</tr>
+<tr>
+<td style="text-align:left">e_version</td>
+<td>ELF版本</td>
+</tr>
+<tr>
+<td style="text-align:left">e_entry</td>
+<td>ELF程序的入口虚拟地址</td>
+</tr>
+<tr>
+<td style="text-align:left">e_phoff</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:left">e_shoff</td>
+<td>段表在文件中的偏移量</td>
+</tr>
+<tr>
+<td style="text-align:left">e_word</td>
+<td>ELF标志位</td>
+</tr>
+<tr>
+<td style="text-align:left">e_ehsize</td>
+<td>ELF文件头大小</td>
+</tr>
+<tr>
+<td style="text-align:left">e_phentsize</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:left">e_phnum</td>
+<td></td>
+</tr>
+<tr>
+<td style="text-align:left">e_shentsize</td>
+<td>段表描述符大小</td>
+</tr>
+<tr>
+<td style="text-align:left">e_shnum</td>
+<td>段表描述符数量, 即段的数量</td>
+</tr>
+<tr>
+<td style="text-align:left">e_shsrendx</td>
+<td>段表字符串表所在的段在段表中的下标</td>
+</tr>
+</tbody>
+</table>
+<h2 id="Section-Header-Table"><a href="#Section-Header-Table" class="headerlink" title="Section Header Table"></a>Section Header Table</h2><p>可用<code>readelf -S</code>查看段表.</p>
+<h3 id="32-bit"><a href="#32-bit" class="headerlink" title="32 bit"></a>32 bit</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">elf32_shdr</span> &#123;</span></div><div class="line">  Elf32_Word    sh_name;</div><div class="line">  Elf32_Word    sh_type;</div><div class="line">  Elf32_Word    sh_flags;</div><div class="line">  Elf32_Addr    sh_addr;</div><div class="line">  Elf32_Off sh_offset;</div><div class="line">  Elf32_Word    sh_size;</div><div class="line">  Elf32_Word    sh_link;</div><div class="line">  Elf32_Word    sh_info;</div><div class="line">  Elf32_Word    sh_addralign;</div><div class="line">  Elf32_Word    sh_entsize;</div><div class="line">&#125; Elf32_Shdr;</div></pre></td></tr></table></figure>
+<h3 id="64-bit-1"><a href="#64-bit-1" class="headerlink" title="64 bit"></a>64 bit</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">elf64_shdr</span> &#123;</span></div><div class="line">  Elf64_Word sh_name;       <span class="comment">/* Section name, index in string tbl */</span></div><div class="line">  Elf64_Word sh_type;       <span class="comment">/* Type of section */</span></div><div class="line">  Elf64_Xword sh_flags;     <span class="comment">/* Miscellaneous section attributes */</span></div><div class="line">  Elf64_Addr sh_addr;       <span class="comment">/* Section virtual addr at execution */</span></div><div class="line">  Elf64_Off sh_offset;      <span class="comment">/* Section file offset */</span></div><div class="line">  Elf64_Xword sh_size;      <span class="comment">/* Size of section in bytes */</span></div><div class="line">  Elf64_Word sh_link;       <span class="comment">/* Index of another section */</span></div><div class="line">  Elf64_Word sh_info;       <span class="comment">/* Additional section information */</span></div><div class="line">  Elf64_Xword sh_addralign; <span class="comment">/* Section alignment */</span></div><div class="line">  Elf64_Xword sh_entsize;   <span class="comment">/* Entry size if section holds table */</span></div><div class="line">&#125; Elf64_Shdr;</div></pre></td></tr></table></figure>
+<h3 id="member-1"><a href="#member-1" class="headerlink" title="member"></a>member</h3><table>
+<thead>
+<tr>
+<th>member</th>
+<th>usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sh_name</td>
+<td>段名字符串在.shstrtab字符串表中的偏移</td>
+</tr>
+<tr>
+<td>sh_type</td>
+<td>段的类型</td>
+</tr>
+<tr>
+<td>sh_flags</td>
+<td>段的标志位</td>
+</tr>
+<tr>
+<td>sh_addr</td>
+<td>段被加载后在进程空间的虚拟地址</td>
+</tr>
+<tr>
+<td>sh_offset</td>
+<td>段在文件中的偏移</td>
+</tr>
+<tr>
+<td>sh_size</td>
+<td>段的长度</td>
+</tr>
+<tr>
+<td>sh_link &amp; sh_info</td>
+<td>段的链接信息</td>
+</tr>
+<tr>
+<td>sh_addralign</td>
+<td>段地址对齐, 为2的n次. 若为0或1, 说明该段没有对齐要求</td>
+</tr>
+<tr>
+<td>sh_entisze</td>
+<td>项的长度</td>
+</tr>
+</tbody>
+</table>
+<h4 id="sh-type-段类型"><a href="#sh-type-段类型" class="headerlink" title="sh_type : 段类型"></a>sh_type : 段类型</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* sh_type */</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_NULL    0			<span class="comment">//无效段</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_PROGBITS    1		<span class="comment">//程序段, 如代码段/数据段</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_SYMTAB  2			<span class="comment">//符号表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_STRTAB  3			<span class="comment">//字符串表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_RELA    4			<span class="comment">//重定位表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_HASH    5			<span class="comment">//符号表的哈希表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_DYNAMIC 6			<span class="comment">//动态链接信息</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_NOTE    7			<span class="comment">//提示性信息</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_NOBITS  8			<span class="comment">//表示该段在文件中没有内容</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_REL     9			<span class="comment">//包含重定位信息</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_SHLIB   10			<span class="comment">//保留</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_DYNSYM  11			<span class="comment">//动态链接的符号表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_NUM     12</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_LOPROC  0x70000000</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_HIPROC  0x7fffffff</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_LOUSER  0x80000000</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHT_HIUSER  0xffffffff</span></div></pre></td></tr></table></figure>
+<h4 id="sh-flag-段标志位"><a href="#sh-flag-段标志位" class="headerlink" title="sh_flag : 段标志位"></a>sh_flag : 段标志位</h4><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* sh_flags */</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHF_WRITE   0x1				<span class="comment">//表示该段在进程空间可写</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHF_ALLOC   0x2				<span class="comment">//该段在进程空间中需要分配空间</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHF_EXECINSTR   0x4			<span class="comment">//该段在进程空间中可执行, 一般指代码段</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHF_MASKPROC    0xf0000000</span></div></pre></td></tr></table></figure>
+<h2 id="Symbol-Table"><a href="#Symbol-Table" class="headerlink" title="Symbol Table"></a>Symbol Table</h2><p>可以用<code>readelf -s</code>查看符号表信息.</p>
+<h3 id="32-bit-1"><a href="#32-bit-1" class="headerlink" title="32 bit"></a>32 bit</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">elf32_sym</span>&#123;</span></div><div class="line">  Elf32_Word    st_name;</div><div class="line">  Elf32_Addr    st_value;</div><div class="line">  Elf32_Word    st_size;</div><div class="line">  <span class="keyword">unsigned</span> <span class="keyword">char</span> st_info;</div><div class="line">  <span class="keyword">unsigned</span> <span class="keyword">char</span> st_other;</div><div class="line">  Elf32_Half    st_shndx;</div><div class="line">&#125; Elf32_Sym;</div></pre></td></tr></table></figure>
+<h3 id="64-bit-2"><a href="#64-bit-2" class="headerlink" title="64 bit"></a>64 bit</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">elf64_sym</span> &#123;</span></div><div class="line">  Elf64_Word st_name;       <span class="comment">/* Symbol name, index in string tbl */</span></div><div class="line">  <span class="keyword">unsigned</span> <span class="keyword">char</span> st_info;    <span class="comment">/* Type and binding attributes */</span></div><div class="line">  <span class="keyword">unsigned</span> <span class="keyword">char</span> st_other;   <span class="comment">/* No defined meaning, 0 */</span></div><div class="line">  Elf64_Half st_shndx;      <span class="comment">/* Associated section index */</span></div><div class="line">  Elf64_Addr st_value;      <span class="comment">/* Value of the symbol */</span></div><div class="line">  Elf64_Xword st_size;      <span class="comment">/* Associated symbol size */</span></div><div class="line">&#125; Elf64_Sym;</div></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>member</th>
+<th>usage</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>st_name</td>
+<td>符号名, 即该符号名在字符串表中的下标</td>
+</tr>
+<tr>
+<td>st_value</td>
+<td>符号相对应的值(目标文件:符号在段中的偏移, 可执行文件: 符号虚拟地址)</td>
+</tr>
+<tr>
+<td>st_size</td>
+<td>符号大小(占用空间)</td>
+</tr>
+<tr>
+<td>st_info</td>
+<td>符号类型和绑定信息</td>
+</tr>
+<tr>
+<td>st_other</td>
+<td>为0, 无用</td>
+</tr>
+<tr>
+<td>st_shndx</td>
+<td>该符号所在的段</td>
+</tr>
+</tbody>
+</table>
+<h3 id="st-info-符号类型及绑定信息"><a href="#st-info-符号类型及绑定信息" class="headerlink" title="st_info : 符号类型及绑定信息"></a>st_info : 符号类型及绑定信息</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* This info is needed when parsing the symbol table */</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STB_LOCAL  0	<span class="comment">// 局部符号</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STB_GLOBAL 1	<span class="comment">//全局符号</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STB_WEAK   2	<span class="comment">//弱引用</span></span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STT_NOTYPE  0	<span class="comment">//未知类型</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STT_OBJECT  1	<span class="comment">//数据对象</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STT_FUNC    2	<span class="comment">//函数</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STT_SECTION 3	<span class="comment">//段, 这种类型的符号必须是STB_LOCAL的</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STT_FILE    4	<span class="comment">//文件名, STB_LOCAL并且st_shndx是SHN_ABS</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STT_COMMON  5</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> STT_TLS     6</span></div></pre></td></tr></table></figure>
+<h3 id="st-shndx-符号所在段"><a href="#st-shndx-符号所在段" class="headerlink" title="st_shndx : 符号所在段"></a>st_shndx : 符号所在段</h3><p>若符号定义在本目标文件中, 那么st_shndx表示符号所在段在段表中的下标. 对于一些特殊符号, st_shndx有特殊的值.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* special section indexes */</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHN_UNDEF   0			<span class="comment">//符号定义在其他文件中</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHN_LORESERVE   0xff00</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHN_LOPROC  0xff00</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHN_HIPROC  0xff1f</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHN_ABS     0xfff1		<span class="comment">//该符号包含一个绝对值</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHN_COMMON  0xfff2		<span class="comment">//该符号是一个COMMON块</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> SHN_HIRESERVE   0xffff</span></div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/ELF/">ELF</a>
+            
+              <a href="/tags/link-load/">link&load</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/09/08/protostar-stack-still-easy/">
+        <span class="next-text nav-default">Protostar Stack Still Easy</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+  
+
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
