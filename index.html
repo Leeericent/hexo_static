@@ -191,6 +191,61 @@
     <header class="post-header">
       <h1 class="post-title">
         
+          <a class="post-link" href="/2017/11/10/calc-writeup/">Calc Writeup</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-10
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/write-up/">write-up</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="SUMMARY"><a href="#SUMMARY" class="headerlink" title="SUMMARY"></a>SUMMARY</h2><p>由于index的大小是不检查的, 我们可以通过改写index的值来任意读取和覆盖栈中的数据. 但是index的值是不能直接被覆盖的. 在eval()函数中的有这行代码<code>index[*index - 1] += index[*index];</code>, 只要我们能够使index为0的时候执行这行代码, 我们就能控制index的值. 最后执行execve(“/bin/sh”)来getshell.</p>
+<h2 id="BYPASS"><a href="#BYPASS" class="headerlink" title="BYPASS"></a>BYPASS</h2><p>我找到的一共有两种绕过方式:</p>
+<ol>
+<li><code>+num</code></li>
+<li><code>00+num</code>: 可以通过多个’0’来绕过检查</li>
+</ol>
+<p>这两种方法的效果是一样的. 都能够泄漏出index[num]处的值. 而<code>+num1+num2</code>则能够向index[num1]地址处写入值<code>index[num] + num2</code>. 这里需要注意一点 : 由于atoi函数的关系,   负数是无法直接写入栈的, 可以分两次将负数写入栈中, 第一次写入<code>0x7fffffff</code>, 第二次写入剩下的值.<br>
+          <div class="read-more">
+            <a href="/2017/11/10/calc-writeup/" class="read-more-link">Read more..</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
           <a class="post-link" href="/2017/11/07/orw-writeup/">Orw Writeup</a>
         
       </h1>
