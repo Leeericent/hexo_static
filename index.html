@@ -191,6 +191,58 @@
     <header class="post-header">
       <h1 class="post-title">
         
+          <a class="post-link" href="/2017/11/18/3-important-structure-in-glibc-malloc/">3 Important Structure in Glibc Malloc</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-18
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/RE-note/">RE note</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <h2 id="data-structure-in-malloc"><a href="#data-structure-in-malloc" class="headerlink" title="data structure in malloc"></a>data structure in malloc</h2><h3 id="malloc-state-arena-header"><a href="#malloc-state-arena-header" class="headerlink" title="malloc_state(arena header)"></a>malloc_state(arena header)</h3><ul>
+<li><em>CODE</em></li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">malloc_state</span>&#123;</span></div><div class="line">    ...</div><div class="line">    <span class="comment">/*fastbins链表数组, mfastbinptr实为malloc_chunk型*/</span></div><div class="line">    mfastbinptr fastbinsY[NFASTBINS];</div><div class="line">    <span class="comment">/*top chunk和last_remainder指针不存放在任何bins中*/</span></div><div class="line">    mchunkptr top;	<span class="comment">//指向top chunk</span></div><div class="line">    mchunkptr last_remainder;	<span class="comment">//上一个分割后剩余的chunk</span></div><div class="line">    <span class="comment">/*bins, 总共(128*2-2)个,减去的是前两个(用作unsorted bin)*/</span></div><div class="line">    mchunkptr bins[NBINS * <span class="number">2</span> <span class="number">-2</span>];</div><div class="line">    ...</div><div class="line">    INTERNAL_SIZE_T	system_mem;<span class="comment">//系统给当前arena分配的内存大小</span></div><div class="line">    INTERNAL_SIZE_T max_system_mem;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+          <div class="read-more">
+            <a href="/2017/11/18/3-important-structure-in-glibc-malloc/" class="read-more-link">Read more..</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
           <a class="post-link" href="/2017/11/10/calc-writeup/">Calc Writeup</a>
         
       </h1>

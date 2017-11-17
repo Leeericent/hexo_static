@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="3 Important Structure in Glibc Malloc"/>
+
+
+
+
+  <meta name="keywords" content="glibc malloc, heap overflow, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/11/18/3-important-structure-in-glibc-malloc/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+  <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> 3 Important Structure in Glibc Malloc - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          3 Important Structure in Glibc Malloc
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-18
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/RE-note/">RE note</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#data-structure-in-malloc"><span class="toc-text">data structure in malloc</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#malloc-state-arena-header"><span class="toc-text">malloc_state(arena header)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#heap-info-heap-header"><span class="toc-text">heap_info(heap header)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#malloc-chunk-chunk-header"><span class="toc-text">malloc_chunk(chunk header)</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#heap示意图"><span class="toc-text">heap示意图</span></a></li></ol></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="data-structure-in-malloc"><a href="#data-structure-in-malloc" class="headerlink" title="data structure in malloc"></a>data structure in malloc</h2><h3 id="malloc-state-arena-header"><a href="#malloc-state-arena-header" class="headerlink" title="malloc_state(arena header)"></a>malloc_state(arena header)</h3><ul>
+<li><em>CODE</em></li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">malloc_state</span>&#123;</span></div><div class="line">    ...</div><div class="line">    <span class="comment">/*fastbins链表数组, mfastbinptr实为malloc_chunk型*/</span></div><div class="line">    mfastbinptr fastbinsY[NFASTBINS];</div><div class="line">    <span class="comment">/*top chunk和last_remainder指针不存放在任何bins中*/</span></div><div class="line">    mchunkptr top;	<span class="comment">//指向top chunk</span></div><div class="line">    mchunkptr last_remainder;	<span class="comment">//上一个分割后剩余的chunk</span></div><div class="line">    <span class="comment">/*bins, 总共(128*2-2)个,减去的是前两个(用作unsorted bin)*/</span></div><div class="line">    mchunkptr bins[NBINS * <span class="number">2</span> <span class="number">-2</span>];</div><div class="line">    ...</div><div class="line">    INTERNAL_SIZE_T	system_mem;<span class="comment">//系统给当前arena分配的内存大小</span></div><div class="line">    INTERNAL_SIZE_T max_system_mem;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<a id="more"></a>
+<ul>
+<li><em>BINS</em></li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line">/*size&lt;512bytes的bins链表中的每个bin大小相同, 相邻bins相差8bytes */</div><div class="line">    64 bins of size      8      [small bin]</div><div class="line">    32 bins of size     64      [large bin]</div><div class="line">    16 bins of size    512          |</div><div class="line">    8 bins of size    4096          |</div><div class="line">    4 bins of size   32768          |</div><div class="line">    2 bins of size  262144          |</div><div class="line">    1 bin  of size what&apos;s left  [large bin]</div></pre></td></tr></table></figure>
+<p><img src="./bins.png" alt="bins"></p>
+<ul>
+<li>FASTBIN示意图*</li>
+</ul>
+<p><img src="./fastbin.png" alt="fastbin"></p>
+<ul>
+<li><p><em>关于FASTBIN和UNSORTED BIN的一点理解</em></p>
+<blockquote>
+<p>Fastbin采用LIFO的方式(因为FASTBIN只维护一个HEAD指针), 通过将PREV_INUSE位置1, fastbin中的chunk从不合并.<br>Unsorted bin采用FIFO的方式, unsorted bin里的chunk大小不一, 每个chunk都有一次重新分配的机会, 当轮到一个chunk的时候, 先检查该chunk是否符合条件, 若符合, 则malloc该chunk, 若不符合, 则将该chunk放回到与其大小相应的bins里面.</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="heap-info-heap-header"><a href="#heap-info-heap-header" class="headerlink" title="heap_info(heap header)"></a>heap_info(heap header)</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">heap_info</span></span></div><div class="line"><span class="class">&#123;</span></div><div class="line">    mstate ar_ptr; <span class="comment">/* Arena for this heap. */</span></div><div class="line">    <span class="class"><span class="keyword">struct</span> _<span class="title">heap_info</span> *<span class="title">prev</span>;</span> <span class="comment">/* Previous heap. */</span></div><div class="line">    <span class="keyword">size_t</span> size;   <span class="comment">/* Current size in bytes. */</span></div><div class="line">    <span class="keyword">size_t</span> mprotect_size; <span class="comment">/* Size in bytes that has been mprotected</span></div><div class="line"><span class="comment">                             PROT_READ|PROT_WRITE.  */</span></div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="malloc-chunk-chunk-header"><a href="#malloc-chunk-chunk-header" class="headerlink" title="malloc_chunk(chunk header)"></a>malloc_chunk(chunk header)</h3><ul>
+<li><em>CODE</em></li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line"><span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span> &#123;</span></div><div class="line">    INTERNAL_SIZE_T      mchunk_prev_size;  </div><div class="line">    <span class="comment">/* Size of previous chunk (if free).  */</span></div><div class="line">    INTERNAL_SIZE_T      mchunk_size;       </div><div class="line">    <span class="comment">/* Size in bytes, including overhead. */</span></div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">fd</span>;</span>                </div><div class="line">    <span class="comment">/* double links -- used only if free. */</span></div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">bk</span>;</span></div><div class="line">    <span class="comment">/* Only used for large blocks: pointer to next larger size.  */</span></div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">fd_nextsize</span>;</span> </div><div class="line">    <span class="comment">/* double links -- used only if free. */</span></div><div class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">bk_nextsize</span>;</span></div><div class="line">&#125;;</div><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">mchunkptr</span>;</span></div></pre></td></tr></table></figure>
+<ul>
+<li><em>FREE CHUNK</em></li>
+</ul>
+<p><img src="./free_chunk.png" alt="free_chunk"></p>
+<ul>
+<li><p><em>ALLOCATED CHUNK</em></p>
+<p><img src="./allocated_chunk.png" alt="allocated_chunk"></p>
+</li>
+</ul>
+<h3 id="heap示意图"><a href="#heap示意图" class="headerlink" title="heap示意图"></a>heap示意图</h3><p><img src="./heap.png" alt="heap"></p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/glibc-malloc/">glibc malloc</a>
+            
+              <a href="/tags/hoverflow/">heap overflow</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/11/10/calc-writeup/">
+        <span class="next-text nav-default">Calc Writeup</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+  
+
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
