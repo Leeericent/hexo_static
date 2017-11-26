@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Understand Glibc Malloc"/>
+
+
+
+
+  <meta name="keywords" content="glibc malloc, heap overflow, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/11/27/Understand-glibc-malloc/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+  <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Understand Glibc Malloc - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Understand Glibc Malloc
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-11-27
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/Translate/">Translate</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#序言"><span class="toc-text">序言</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#关于malloc"><span class="toc-text">关于malloc</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#系统调用"><span class="toc-text">系统调用</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#线程"><span class="toc-text">线程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#example"><span class="toc-text">example</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#输出分析"><span class="toc-text">输出分析</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#主线程执行malloc之后"><span class="toc-text">主线程执行malloc之后</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#在主线程-free-之后"><span class="toc-text">在主线程 free 之后</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#thread1执行malloc之前"><span class="toc-text">thread1执行malloc之前</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#thread1执行malloc-后"><span class="toc-text">thread1执行malloc 后</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#thread1-free之后"><span class="toc-text">thread1 free之后</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Arena"><span class="toc-text">Arena</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Arena的数量"><span class="toc-text">Arena的数量</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Multiple-Arena"><span class="toc-text">Multiple Arena</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Multiple-Heaps"><span class="toc-text">Multiple Heaps</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Chunk"><span class="toc-text">Chunk</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Allocated-chunk"><span class="toc-text">Allocated chunk</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Free-chunk"><span class="toc-text">Free chunk</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Top-chunk"><span class="toc-text">Top chunk</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Last-Reminder-chunk"><span class="toc-text">Last Reminder chunk</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Bins"><span class="toc-text">Bins</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Fast-bin"><span class="toc-text">Fast bin</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Unsorted-bin"><span class="toc-text">Unsorted bin</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Small-bin"><span class="toc-text">Small bin</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Large-bin"><span class="toc-text">Large bin</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#refrence"><span class="toc-text">refrence</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h1 id="序言"><a href="#序言" class="headerlink" title="序言"></a>序言</h1><p>我经常对堆内存感到疑惑，以下问题</p>
+<blockquote>
+<p>堆内存是如何从内核取得的？</p>
+<p>如何高效管理堆内存？</p>
+<p>堆是由谁来管理的？是内核，库，还是程序本身？</p>
+<p>堆能够被利用吗？</p>
+</blockquote>
+<p>经常盘旋在我的脑海中，然而直到最近我才有时间去深入理解这些问题。下面就来谈谈我的研究成果。<br><a id="more"></a><br>开源社区提供了许多现成的内存分配器：</p>
+<ul>
+<li>dlmalloc – General purpose allocator</li>
+<li>ptmalloc2 – glibc</li>
+<li>jemalloc – FreeBSD and Firefox</li>
+<li>tcmalloc – Google</li>
+<li>libumem – Solaris</li>
+<li>…</li>
+</ul>
+<p>每种内存分配器都宣称自己快速、高效、可扩展，但并不是所有内存分配器都能够适用于所有应用程序。内存吞吐量大的应用程序的性能很大程度上取决于内存分配器的性能。在这篇文章中，我只会讨论<code>glibc malloc</code>内存分配器。为了更好地理解<code>glibc malloc</code>，在此给出<a href="https://sourceware.org/ml/libc-alpha/2014-09/msg00088.html" target="_blank" rel="external">源码链接</a>。所以系好安全带，我们要开始了！</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">历史：ptmalloc2基于dlmalloc开发，并添加了对多线程的支持，于2006年公布。在公布之后，ptmalloc2被整合到glibc源代码中，此后ptmalloc2所有的修改都直接提交到glibc的malloc部分去了。因此，ptmalloc2的源码和glibc的malloc源码有很多不一致的地方。</div></pre></td></tr></table></figure>
+<h1 id="关于malloc"><a href="#关于malloc" class="headerlink" title="关于malloc"></a>关于malloc</h1><h2 id="系统调用"><a href="#系统调用" class="headerlink" title="系统调用"></a>系统调用</h2><p>这篇文章中的malloc所使用的系统调用是<code>sbrk</code>或者<code>mmap</code>。</p>
+<h2 id="线程"><a href="#线程" class="headerlink" title="线程"></a>线程</h2><p>在早年的Linux中，dlmalloc是默认的内存分配器。由于对多线程的支持，ptmalloc2取代了dlmalloc的地位。多线程支持能提高内存分配器的性能，从而提高应用的性能。</p>
+<p>在dlmalloc中，当有两个线程同时调用malloc时，只有一个线程能够访问临界区，因为freelist被所有可用线程<strong>共享</strong>。正如此，使用 dlmalloc的多线程应用会在内存分配上耗费过多时间，导致整个应用性能的下降。</p>
+<p>而在ptmalloc2中，当有两个线程同时调用malloc时，内存均会得到立即分配，因为每个线程都维护着一个独立里堆段，因此维护这些堆的freelist也是独立的。这种为每个线程独立地维护堆和freelist的行为就称为<strong>per thread arena</strong>。</p>
+<blockquote>
+<p> <strong>freelist</strong> : 已被free的chunk构成的链表</p>
+</blockquote>
+<h2 id="example"><a href="#example" class="headerlink" title="example"></a>example</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div></pre></td><td class="code"><pre><div class="line"><span class="comment">/* Per thread arena example. */</span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;pthread.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;unistd.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;sys/types.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">void</span>* <span class="title">threadFunc</span><span class="params">(<span class="keyword">void</span>* arg)</span> </span>&#123;</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Before malloc in thread 1\n"</span>);</div><div class="line">        getchar();</div><div class="line">        <span class="keyword">char</span>* addr = (<span class="keyword">char</span>*) <span class="built_in">malloc</span>(<span class="number">1000</span>);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"After malloc and before free in thread 1\n"</span>);</div><div class="line">        getchar();</div><div class="line">        <span class="built_in">free</span>(addr);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"After free in thread 1\n"</span>);</div><div class="line">        getchar();</div><div class="line">&#125;</div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</div><div class="line">        <span class="keyword">pthread_t</span> t1;</div><div class="line">        <span class="keyword">void</span>* s;</div><div class="line">        <span class="keyword">int</span> ret;</div><div class="line">        <span class="keyword">char</span>* addr;</div><div class="line"></div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Welcome to per thread arena example::%d\n"</span>,getpid());</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"Before malloc in main thread\n"</span>);</div><div class="line">        getchar();</div><div class="line">        addr = (<span class="keyword">char</span>*) <span class="built_in">malloc</span>(<span class="number">1000</span>);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"After malloc and before free in main thread\n"</span>);</div><div class="line">        getchar();</div><div class="line">        <span class="built_in">free</span>(addr);</div><div class="line">        <span class="built_in">printf</span>(<span class="string">"After free in main thread\n"</span>);</div><div class="line">        getchar();</div><div class="line">        ret = pthread_create(&amp;t1, <span class="literal">NULL</span>, threadFunc, <span class="literal">NULL</span>);</div><div class="line">        <span class="keyword">if</span>(ret)</div><div class="line">        &#123;</div><div class="line">                <span class="built_in">printf</span>(<span class="string">"Thread creation error\n"</span>);</div><div class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">        &#125;</div><div class="line">        ret = pthread_join(t1, &amp;s);</div><div class="line">        <span class="keyword">if</span>(ret)</div><div class="line">        &#123;</div><div class="line">                <span class="built_in">printf</span>(<span class="string">"Thread join error\n"</span>);</div><div class="line">                <span class="keyword">return</span> <span class="number">-1</span>;</div><div class="line">        &#125;</div><div class="line">        <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<h3 id="输出分析"><a href="#输出分析" class="headerlink" title="输出分析"></a>输出分析</h3><p>从下面的输出里我们可以得知，这里还没有堆段和per thread stack，因为thread1还没有创建。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ ./mthread </div><div class="line">Welcome to per thread arena example::6501</div><div class="line">Before malloc in main thread</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ cat /proc/6501/maps</div><div class="line">08048000-08049000 r-xp 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">08049000-0804a000 r--p 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804a000-0804b000 rw-p 00001000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">b7e05000-b7e07000 rw-p 00000000 00:00 0 </div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$</div></pre></td></tr></table></figure>
+<h4 id="主线程执行malloc之后"><a href="#主线程执行malloc之后" class="headerlink" title="主线程执行malloc之后"></a>主线程执行malloc之后</h4><p>从输出中我们可以看到堆段产生在数据段<code>0804b000</code> - <code>0806c000</code>之间，这表明堆内存是通过更高级别的系统调用产生（即<a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/malloc.c#L2458" target="_blank" rel="external">brk</a>系统调用）的。此外，请注意，尽管用户只申请了1000字节的内存，但是实际产生了<a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/malloc.c#L2429" target="_blank" rel="external">132KB</a>的堆内存。这个连续的堆内存区域被称为 <code>arena</code>。因为这个arena是被主线程建立的，因此称为<a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/malloc.c#L1740" target="_blank" rel="external">main arena</a>。接下来的申请会继续分配这个arena的132KB中剩余的部分，直到用尽。当<a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/malloc.c#L3788" target="_blank" rel="external">用尽</a>时，它可以通过更高级别的系统调用扩容，在扩容之后，<code>top chunk</code>的大小也随之调整以圈进这块额外的空间。相应地，arena也可以在top chunk空间过大时缩小。 </p>
+<blockquote>
+<p><strong>注意</strong>：top chunk是一个arena中最顶层的chunk。有关top chunk的更多信息详见下述“top chunk”部分。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div></pre></td><td class="code"><pre><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ ./mthread </div><div class="line">Welcome to per thread arena example::6501</div><div class="line">Before malloc in main thread</div><div class="line">After malloc and before free in main thread</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/lsploits/hof/ptmalloc.ppt/mthread$ cat /proc/6501/maps</div><div class="line">08048000-08049000 r-xp 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">08049000-0804a000 r--p 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804a000-0804b000 rw-p 00001000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804b000-0806c000 rw-p 00000000 00:00 0          [heap]</div><div class="line">b7e05000-b7e07000 rw-p 00000000 00:00 0 </div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$</div></pre></td></tr></table></figure>
+<h4 id="在主线程-free-之后"><a href="#在主线程-free-之后" class="headerlink" title="在主线程 free 之后"></a>在主线程 free 之后</h4><p>在如下的输出结果中我们可以看出当分配的内存区域free掉时，其后的内存并不会立即释放给操作系统。分配的内存区域（1000B）仅仅是移交给了<code>glibc malloc</code>，把这段free掉的区域添加在了main arenas bin中（在glibc malloc中，freelist被称为bin）。随后当用户请求内存时，glibc malloc就不再从内核中申请新的堆区了，而是尝试在bin中找到空闲区块，除非实在找不到。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ ./mthread </div><div class="line">Welcome to per thread arena example::6501</div><div class="line">Before malloc in main thread</div><div class="line">After malloc and before free in main thread</div><div class="line">After free in main thread</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/lsploits/hof/ptmalloc.ppt/mthread$ cat /proc/6501/maps</div><div class="line">08048000-08049000 r-xp 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">08049000-0804a000 r--p 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804a000-0804b000 rw-p 00001000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804b000-0806c000 rw-p 00000000 00:00 0          [heap]</div><div class="line">b7e05000-b7e07000 rw-p 00000000 00:00 0 </div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$</div></pre></td></tr></table></figure>
+<h4 id="thread1执行malloc之前"><a href="#thread1执行malloc之前" class="headerlink" title="thread1执行malloc之前"></a>thread1执行malloc之前</h4><p>此时thread1的堆还未建立，但是其每个线程栈都已建立。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ ./mthread </div><div class="line">Welcome to per thread arena example::6501</div><div class="line">Before malloc in main thread</div><div class="line">After malloc and before free in main thread</div><div class="line">After free in main thread</div><div class="line">Before malloc in thread 1</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ cat /proc/6501/maps</div><div class="line">08048000-08049000 r-xp 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">08049000-0804a000 r--p 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804a000-0804b000 rw-p 00001000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804b000-0806c000 rw-p 00000000 00:00 0          [heap]</div><div class="line">b7604000-b7605000 ---p 00000000 00:00 0 </div><div class="line">b7605000-b7e07000 rw-p 00000000 00:00 0          [stack:6594]</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$</div></pre></td></tr></table></figure>
+<h4 id="thread1执行malloc-后"><a href="#thread1执行malloc-后" class="headerlink" title="thread1执行malloc 后"></a>thread1执行malloc 后</h4><p> thread1的堆段建立在内存映射段区域<code>b7500000</code> - <code>b7521000</code>，这表明了堆内存是使用mmap系统调用产生的，而非同主线程一样使用 sbrk系统调用。同样地，尽管用户只请求了1000B，1MB的堆内存还是被映射到了进程地址空间。在这1MB中，只有132KB被设置了读写权限并成为该线程的堆内存。这段连续内存（132KB）被称为<code>thread arena</code>。 </p>
+<blockquote>
+<p><strong>注意</strong>：当用户请求超过 128KB 大小并且此时arena中没有足够的空间来满足用户的请求时，内存将通过使用 mmap 系统调用（不再是 sbrk）来分配而不论请求是发自main arena还是thread arena。</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ ./mthread </div><div class="line">Welcome to per thread arena example::6501</div><div class="line">Before malloc in main thread</div><div class="line">After malloc and before free in main thread</div><div class="line">After free in main thread</div><div class="line">Before malloc in thread 1</div><div class="line">After malloc and before free in thread 1</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ cat /proc/6501/maps</div><div class="line">08048000-08049000 r-xp 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">08049000-0804a000 r--p 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804a000-0804b000 rw-p 00001000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804b000-0806c000 rw-p 00000000 00:00 0          [heap]</div><div class="line">b7500000-b7521000 rw-p 00000000 00:00 0 </div><div class="line">b7521000-b7600000 ---p 00000000 00:00 0 </div><div class="line">b7604000-b7605000 ---p 00000000 00:00 0 </div><div class="line">b7605000-b7e07000 rw-p 00000000 00:00 0          [stack:6594]</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$</div></pre></td></tr></table></figure>
+<h4 id="thread1-free之后"><a href="#thread1-free之后" class="headerlink" title="thread1 free之后"></a>thread1 free之后</h4><p>在如下的输出结果中我们可以看出 free 掉的分配的内存区域这一过程并不会把堆内存归还给操作系统，而是仅仅是移交给了glibc malloc，然后添加在了<code>thread arenas bin</code>中。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ ./mthread </div><div class="line">Welcome to per thread arena example::6501</div><div class="line">Before malloc in main thread</div><div class="line">After malloc and before free in main thread</div><div class="line">After free in main thread</div><div class="line">Before malloc in thread 1</div><div class="line">After malloc and before free in thread 1</div><div class="line">After free in thread 1</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$ cat /proc/6501/maps</div><div class="line">08048000-08049000 r-xp 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">08049000-0804a000 r--p 00000000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804a000-0804b000 rw-p 00001000 08:01 539625     /home/sploitfun/ptmalloc.ppt/mthread/mthread</div><div class="line">0804b000-0806c000 rw-p 00000000 00:00 0          [heap]</div><div class="line">b7500000-b7521000 rw-p 00000000 00:00 0 </div><div class="line">b7521000-b7600000 ---p 00000000 00:00 0 </div><div class="line">b7604000-b7605000 ---p 00000000 00:00 0 </div><div class="line">b7605000-b7e07000 rw-p 00000000 00:00 0          [stack:6594]</div><div class="line">...</div><div class="line">sploitfun@sploitfun-VirtualBox:~/ptmalloc.ppt/mthread$</div></pre></td></tr></table></figure>
+<h2 id="Arena"><a href="#Arena" class="headerlink" title="Arena"></a>Arena</h2><h3 id="Arena的数量"><a href="#Arena的数量" class="headerlink" title="Arena的数量"></a>Arena的数量</h3><p>在上述例子中，主线程包含<code>main arena</code>而thread 1包含它自有的<code>thread arena</code>。所以若不计线程的数量，在线程和arena之间是否存在一对一映射关系？当然不存在，部分极端的应用甚至运行比处理器核心的数量还多的线程，在这种情况下，每个线程都拥有一个arena开销过高且意义不大。因此，应用的arena数量限制是基于系统的核心数的。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">For 32 bit systems:</div><div class="line">     Number of arena = 2 * number of cores.</div><div class="line">For 64 bit systems:</div><div class="line">     Number of arena = 8 * number of cores.</div></pre></td></tr></table></figure>
+<h3 id="Multiple-Arena"><a href="#Multiple-Arena" class="headerlink" title="Multiple Arena"></a>Multiple Arena</h3><p>让我们来看一个运行在单核计算机上的32位操作系统上的多线程应用（4线程 = 主线程 + 3个用户线程）的例子。这里线程数量(4)大于核心数的二倍加一，因此在这种条件下，glibc malloc认定<code>multiple arenas</code>会被所有可用线程共享。那么它是如何共享的呢？</p>
+<ul>
+<li>当主线程第一次调用malloc时，已经建立的main arena会被没有任何竞争地使用。</li>
+<li>当thread1和thread2第一次调用malloc时，一块新的arena就被创建且会被没有任何竞争地使用。此时线程和arena之间有着一对一的映射关系。</li>
+<li>当thread3第一次调用malloc时，arena的数量限制被<a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/arena.c#L847" target="_blank" rel="external">计算</a>出来。这里超过了arena的数量限制，因此尝试复用已经存在的arena。</li>
+<li><p>复用：</p>
+<ul>
+<li><p>一旦遍历出可用arena，就开始自旋申请该arena的锁。</p>
+</li>
+<li><p>如果上锁成功（比如说main arena上锁成功），就将该arena返回用户。</p>
+</li>
+<li>如果查无可用arena，thread3的malloc操作阻塞，直到有可用的arena为止。</li>
+</ul>
+</li>
+<li>当thread3第二次调用malloc时，malloc会尝试使用上一次使用的arena（main arena）。当main arena可用时就用，否则thread3就一直阻塞直至main arena被free掉。因此现在main arena实际上是被main thread和thread3所共享</li>
+</ul>
+<h3 id="Multiple-Heaps"><a href="#Multiple-Heaps" class="headerlink" title="Multiple Heaps"></a>Multiple Heaps</h3><p>在glibc malloc中主要发现了3种数据结构： </p>
+<ul>
+<li><a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/arena.c#L59" target="_blank" rel="external">heap_info</a> ：<code>Heap Header</code>，一个thread arena可以有多个堆。每个堆都有自己的堆 Header。为什么需要多个堆？ 每个thread arena都只包含一个堆，但是当这个堆段空间耗尽时，新的堆（非连续区域）就会被 mmap 到这个arena。 </li>
+<li><a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/malloc.c#L1671" target="_blank" rel="external">malloc_state</a> ：<code>Arena header</code>，一个thread arena可以有多个堆，但是所有这些堆只存在arena header。arena header包括的信息有：<code>bins</code>、<code>top chunk</code>、<code>last remainder chunk</code>等。</li>
+<li><a href="https://github.com/sploitfun/lsploits/blob/master/glibc/malloc/malloc.c#L1108" target="_blank" rel="external">malloc_chunk</a> ：<code>Chunk header</code>， 一个堆根据用户请求被分为若干<code>chunk</code>。每个这样的<code>chunk</code>都有自己的chunk header。</li>
+</ul>
+<blockquote>
+<p><strong>注意</strong> ：</p>
+<ul>
+<li>「Main arena」没有多个堆，因此没有「heap_info」结构。当「main arena」空间耗尽时，就拓展 sbrk 获得的堆段（拓展后是连续内存区域），直至“碰”到内存映射区为止。</li>
+<li>不像「thread arena」，「main arena」的「arena 」header不是 sbrk 获得的堆段的一部分，而是一个全局变量，因此它可以在 libc.so 的 数据段中被找到。</li>
+</ul>
+</blockquote>
+<p><code>main arena</code>和<code>thread arena</code>的图示如下（单堆段）：</p>
+<p><img src="./arena.png" alt="arena"> </p>
+<p><code>thread arena</code>的图示如下（多堆段）：</p>
+<p><img src="./arena2.png" alt="arena2"></p>
+<h2 id="Chunk"><a href="#Chunk" class="headerlink" title="Chunk"></a>Chunk</h2><p>chunk有以下几种类型:</p>
+<ul>
+<li>Allocated chunk</li>
+<li>Free chunk</li>
+<li>Top chunk</li>
+<li>Last Remainder chunk</li>
+</ul>
+<h3 id="Allocated-chunk"><a href="#Allocated-chunk" class="headerlink" title="Allocated chunk"></a>Allocated chunk</h3><p><img src="./allocated_chunk.png" alt="allocated chunk"></p>
+<p><strong>prev_size</strong>: 如果上一个chunk未被分配, 这个值代表上一个chunk的大小, 否则这里就是用户的数据. </p>
+<p><strong>size</strong>: 该chunk的大小. 最后三位是标志位.</p>
+<ul>
+<li>PREV_INUSE(P) — 当上一个chunk被分配时置1</li>
+<li>IS_MMAPED(M) — 当chunk以mmap调用分配时置1</li>
+<li>NO_MAIN_ARENA(N) — 当chunk属于thread arena时置1</li>
+</ul>
+<blockquote>
+<p><strong>注意</strong>:</p>
+<ul>
+<li>在已分配的malloc_chunk中, fd/bk等字段是无用的, 这些字段被用户数据所取代.</li>
+<li>用户所请求的大小被转换成有效的大小, 因为需要额外的空间来存储malloc_chunk结构和保持对齐. 由于转换后的大小(8的倍数)能够保证后三位永远为0, 因此这三位被当作标志位使用.</li>
+</ul>
+</blockquote>
+<h3 id="Free-chunk"><a href="#Free-chunk" class="headerlink" title="Free chunk"></a>Free chunk</h3><p><img src="./free_chunk.png" alt="free chunk"></p>
+<p><strong>prev_size</strong>: 任何两个free chunk都不相邻. 当两个free chunk相邻时, 它们会被合并成一个free chunk. 因此free chunk的上一个chunk总是已分配的, 所以free chunk的prev_size字段总是上一个chunk的数据.</p>
+<p><strong>size</strong>: 这个字段表示该free chunk的大小.</p>
+<p><strong>fd</strong>: 前向指针 — 在bin中指向下一个chunk(并不是指在物理内存上连续的下一个chunk).</p>
+<p><strong>bk</strong>: 后向指针 — 在bin中指向上一个chunk(并不是指在物理内存上连续的上一个chunk).</p>
+<h3 id="Top-chunk"><a href="#Top-chunk" class="headerlink" title="Top chunk"></a>Top chunk</h3><p>一个arena中最顶部的chunk叫做<code>top chunk</code>, 它不属于任何bin, 当bins中无可用的free chunk时, top chunk才被使用. 如果top chunk的大小大于用户请求时, top chunk被分为两部分:</p>
+<ul>
+<li><code>User chunk</code>(大小为用户请求的大小)</li>
+<li><code>Reminder chunk</code>(剩余大小)</li>
+</ul>
+<p>剩余的chunk变成新的top chunk. 如果top chunk的大小小于用户所请求的大小, 系统将会调用sbrk(main arena)或者mmap(thread arena)来扩展top chunk.</p>
+<h3 id="Last-Reminder-chunk"><a href="#Last-Reminder-chunk" class="headerlink" title="Last Reminder chunk"></a>Last Reminder chunk</h3><p>最后一次small request中因分割而得到的剩余部分. <code>last remainder chunk</code>有助于改进引用的局部性, 也即连续的对small chunk的malloc请求可能最终导致各chunk被分配得彼此贴近。</p>
+<p>但是除了在一个arena里可用的chunk, 哪些有资格成为last remainder chunk呢？</p>
+<p>当一个用户请求small chunk而无法从small bin和unsorted bin得到服务时, binmaps就会扫描下一个最大非空bin. 正如前文所提及的, 如果这样的bin找到了, 其中最适chunk就会分割为两部分: 返回给用户的User chunk和添加到unsorted bin中的Remainder chunk。此外，这一Remainder chunk还会成为最新的<strong>last remainder chunk</strong>。</p>
+<p>那么参考局部性是如何实现的呢？</p>
+<p>现在当用户随后的请求是请求一块small chunk并且last remainder chunk是unsorted bin中唯一的chunk, last remainder chunk就分割成两部分: 返回给用户的User chunk、添加到unsorted bin中的Remainder chunk. 此外，这一Remainder chunk还会成为最新的 last remainder chunk. 因此随后的内存分配最终导致各chunk被分配得彼此贴近。</p>
+<h2 id="Bins"><a href="#Bins" class="headerlink" title="Bins"></a>Bins</h2><p>Bins是freelist的数据结构类型, 它们被用于存放free chunks. 根据大小可将bins分为以下几类:</p>
+<ul>
+<li>Fast bin</li>
+<li>Unsorted bin</li>
+<li>Small bin</li>
+<li>Large bin</li>
+</ul>
+<p>存放以上bins的数据结构是:</p>
+<p><strong>fastbinsY</strong>: 这个数组存放fastbins</p>
+<p><strong>bins</strong>: 这个数组存放unsorted, small和large bins. 总共有126个bins链表, 他们按照如下规则分布:</p>
+<ul>
+<li>Bin 1 — Unsorted bin</li>
+<li>Bin 2到Bin 63 — Small bin</li>
+<li>Bin 64到Bin 126 — Large bin</li>
+</ul>
+<h3 id="Fast-bin"><a href="#Fast-bin" class="headerlink" title="Fast bin"></a>Fast bin</h3><p>大小在16到80字节的chunk被称为<code>fast chunk</code>, 存放fast chunk的bins被称为<code>fast bins</code> . Fast bins在内存分配和释放快于其他bins.</p>
+<ul>
+<li>bins的数量 — 10<ul>
+<li>每个fast bin包含一个free chunks的单向链表, 插入和删除都只发生在链表的前端 — LIFO</li>
+</ul>
+</li>
+<li>chunk大小 — 相隔8字节<ul>
+<li>在同一个fast bin中的chunk大小相同.</li>
+<li>第一个fast bin(index 0)的大小为16字节, 往下依次8字节递增.</li>
+</ul>
+</li>
+<li>在malloc 初始化中, 最大fast bin大小被置为64字节(非80), 因此16-64字节被默认为fast chunks.</li>
+<li>不合并 — 两个相邻的fast chunk不被合并, 这样做虽然会造成内存碎片, 但是可以提高速度.</li>
+<li>malloc(fast chunk) — <ul>
+<li>起初fast bin max size和fast bin indices是空的, 因此执行的是fast bin的代码, 而非small bin和large bin的代码.</li>
+<li>之后当它非空时, 用户请求的chunk从相应的fast bin链表中取出</li>
+</ul>
+</li>
+<li>free(fast chunk) — <ul>
+<li>fast bin index由相应的chunk大小计算得出</li>
+<li>被free的chunk插入到相应的binlist的前端</li>
+</ul>
+</li>
+</ul>
+<p><img src="./fastbin.png" alt="fast bin"></p>
+<h3 id="Unsorted-bin"><a href="#Unsorted-bin" class="headerlink" title="Unsorted bin"></a>Unsorted bin</h3><p>当small bin或者large bin被free时, 它们会先被插入到unsorted bin链表而非各自相应的链表. 这个规则让glibc malloc能够二次利用之前free的chunk, 这样做能够加快内存的分配和释放, 因为花在查找合适大小chunk上的时间减少了.</p>
+<ul>
+<li>bins的数量 — 1<ul>
+<li>unsorted bin包含一个双向循环链表</li>
+</ul>
+</li>
+<li>chunk 大小 — 对大小无限制</li>
+</ul>
+<p><img src="./bins.png" alt="bins"></p>
+<h3 id="Small-bin"><a href="#Small-bin" class="headerlink" title="Small bin"></a>Small bin</h3><p>低于512字节的chunk被称为<code>small chunk</code>, 存放small chunk的bins被称为<code>small bins</code>, small bins快于large bins但慢于fast bins.</p>
+<ul>
+<li>bins的数量 — 62<ul>
+<li>每个small bin包含一个双向循环链表, 这是为了方便chunk能够从bins中间进行unlink, chunk从链表前端插入并从链表尾端删除 — FIFO</li>
+</ul>
+</li>
+<li>chunk大小 — 相隔8字节<ul>
+<li>首个small bin(即Bin 2)包含大小为16字节的chunk, 往下依次递增8字节</li>
+<li>在同一small bin中的chunk大小一致.</li>
+</ul>
+</li>
+<li>合并 — 两个相邻的free small chunk会被合并.</li>
+<li>malloc(small chunk) — <ul>
+<li>最初small bin是空的, 当用户请求一个small chunk时, 执行的是unsorted bin的代码而非small bin.</li>
+<li>同样地, 在第一次调用malloc期间, 在malloc_state找到的small bin和large bin数据结构被初始化, bin都会指向它们本身以表示binlist为空</li>
+<li>之后当small bin为非空时, (若用户在此调用malloc)相应链表上的最后一个chunk将会被移除, 并且返回给用户</li>
+</ul>
+</li>
+<li>free(small chunk) — </li>
+</ul>
+<pre><code>*   当要free这个chunk时, 先检查它前后(物理内存上毗邻)的chunk是否是free的, 如果是的话, 先将这些chunk从各自的链表上unlink, 合并后将它们插入到unsorted bin链表的头部
+</code></pre><h3 id="Large-bin"><a href="#Large-bin" class="headerlink" title="Large bin"></a>Large bin</h3><p>大小大于512字节的chunk被称为large chunk, 存放large chunk的链表被称为large bin.</p>
+<p><strong>bins的数量</strong> — 63</p>
+<ul>
+<li>每个large bin包含一个双向循环链表, 我们可以在链表的任何地方插入或删除chunk</li>
+<li>在这63个bin中:<ul>
+<li>前32个bin记录着大小以64字节递增的bin链表, 也即第一个large chunk(Bin 65)记录着大小为512字节~568字节的chunk的binlist, 第二个large chunk (Bin 66)记录着大小为576字节到632字节的chunk的binlist, 依次类推……</li>
+<li>后16个bin记录着大小以 512 字节递增的bin链表</li>
+<li>后8个bin记录着大小以 4096 字节递增的bin链表</li>
+<li>后 4 个bin记录着大小以 32768 字节递增的bin链表</li>
+<li>后2个bin记录着大小以 262144 字节递增的bin链表</li>
+<li>最后1个bin记录着大小为剩余大小的chunk</li>
+</ul>
+</li>
+<li>与small bin不同的是, large bin中所有chunk大小不一定相同, 因此各chunk需要递减保存. 最大的chunk保存在最前的位置, 而最小的chunk保存在最后的位置</li>
+<li>合并 — 任意两个free chunk不相邻</li>
+<li>malloc(large chunk) — <ul>
+<li>初始情况下, large bin都是空链表, 因此尽管用户请求large chunk, 执行的代码将是next largetst bin code而不是large bin code</li>
+<li>同样地, 在第一次调用malloc期间, 在malloc_state找到的small bin和large bin数据结构被初始化, bin都会指向它们本身以表示binlist为空</li>
+</ul>
+</li>
+<li>此后当small bin非空后, 当相应binlist中最大chunk的大小大于用户所请求的大小时, binlist就从顶部遍历到底部(从小到大)以找到一个大小最接近用户需求的chunk. 一旦找到, 相应chunk就会分成两块: <ul>
+<li><code>User chunk</code>(用户请求大小) — 返回给用户</li>
+<li><code>Remainder chunk</code>(剩余大小)— 添加到<code>unsorted bin</code></li>
+</ul>
+</li>
+<li>当相应binlist中最大chunk的大小小于用户所请求的大小时, 尝试在Next largest bin中查到到所需的chunk以响应用户请求. next largetst bin code会扫描 <code>binmaps</code>以找到下一个最大非空bin, 如果这样的bin找到了, 就从其中的binlist中检索到合适的chunk并返回给用户; 反之就使用<code>top chunk</code>以响应用户请求</li>
+<li>free(large chunk) — 类似于small chunk</li>
+</ul>
+<h1 id="refrence"><a href="#refrence" class="headerlink" title="refrence"></a>refrence</h1><p>这篇文章里有些段落的翻译是参考了别人的翻译(修改了格式), 在这里放上链接:</p>
+<p><a href="https://sploitfun.wordpress.com/2015/02/10/understanding-glibc-malloc/" target="_blank" rel="external">原文地址</a></p>
+<p><a href="http://blog.csdn.net/maokelong95/article/details/51989081" target="_blank" rel="external">参考链接</a></p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/glibc-malloc/">glibc malloc</a>
+            
+              <a href="/tags/hoverflow/">heap overflow</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/11/20/hacknote-writeup/">
+        <span class="next-text nav-default">Hacknote Writeup</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+  
+
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
