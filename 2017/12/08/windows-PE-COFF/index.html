@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Windows PE/COFF"/>
+
+
+
+
+  <meta name="keywords" content="ELF, link&load, Windows, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2017/12/08/windows-PE-COFF/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+  <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Windows PE/COFF - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Windows PE/COFF
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2017-12-08
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/RE-note/">RE note</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+  <div class="post-toc" id="post-toc">
+    <h2 class="post-toc-title">Contents</h2>
+    <div class="post-toc-content">
+      <ol class="toc"><li class="toc-item toc-level-1"><a class="toc-link" href="#PREFACE"><span class="toc-text">PREFACE</span></a></li><li class="toc-item toc-level-1"><a class="toc-link" href="#COFF"><span class="toc-text">COFF</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#Image-Header"><span class="toc-text">Image Header</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Section-Table"><span class="toc-text">Section Table</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Section-Header"><span class="toc-text">Section Header</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#characteristics"><span class="toc-text">characteristics</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Other"><span class="toc-text">Other</span></a></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#PE"><span class="toc-text">PE</span></a><ol class="toc-child"><li class="toc-item toc-level-2"><a class="toc-link" href="#DOS-Header-amp-DOS-Stub"><span class="toc-text">DOS Header & DOS Stub</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#DOS-Header"><span class="toc-text">DOS Header</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#DOS-Stub"><span class="toc-text">DOS Stub</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#NT-Header"><span class="toc-text">NT Header</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Image-Optional-Header"><span class="toc-text">Image Optional Header</span></a></li></ol></li></ol></li><li class="toc-item toc-level-1"><a class="toc-link" href="#REFRENCE"><span class="toc-text">REFRENCE</span></a></li></ol>
+    </div>
+  </div>
+
+
+    <div class="post-content">
+      
+        <h1 id="PREFACE"><a href="#PREFACE" class="headerlink" title="PREFACE"></a>PREFACE</h1><p>Windows下的可执行文件采用PE格式, 而编译器产生的目标文件仍为COFF格式. 由于PE是COFF的一种扩展, 它们在结构上很大程度相同. 很多时候我们可以将它们统称为PE/COFF文件.</p>
+<h1 id="COFF"><a href="#COFF" class="headerlink" title="COFF"></a>COFF</h1><p>COFF文件的文件头部(类比ELF Header)包括两部分, 一个是描述该文件总体结构和属性的映像头(Image Header), 另一个是描述该文件中包含的端属性的段表(Section Table).</p>
+<p>下图定性的描述了COFF文件的大致结构.<br><a id="more"></a></p>
+<p><img src="./coff.png" alt="coff"></p>
+<h2 id="Image-Header"><a href="#Image-Header" class="headerlink" title="Image Header"></a>Image Header</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">IMAGE_FILE_HEADER</span> &#123;</span></div><div class="line">      WORD Machine;    <span class="comment">//目标机器类型(CPU类型)</span></div><div class="line">      WORD NumberOfSections;    <span class="comment">//段的数量</span></div><div class="line">      DWORD TimeDateStamp;    <span class="comment">//PE文件创建的时间</span></div><div class="line">      DWORD PointerToSymbolTable;    <span class="comment">//符号表在PE文件中的位置</span></div><div class="line">      DWORD NumberOfSymbols;    <span class="comment">//符号数量</span></div><div class="line">      WORD SizeOfOptionalHeader;    <span class="comment">//Optional Header的大小(仅PE)</span></div><div class="line">      WORD Characteristics;    <span class="comment">//标志位</span></div><div class="line">&#125;IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER</div></pre></td></tr></table></figure>
+<h2 id="Section-Table"><a href="#Section-Table" class="headerlink" title="Section Table"></a>Section Table</h2><p>段表是一个类型为<code>_IMAGE_SECTION_HEADER</code>的数组, 数组的大小为COFF文件所包含的段的数量.</p>
+<h3 id="Section-Header"><a href="#Section-Header" class="headerlink" title="Section Header"></a>Section Header</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">IMAGE_SECTION_HEADER</span> &#123;</span></div><div class="line">    BYTE name[IMAGE_SIZEOF_SHORT_NAME];    <span class="comment">//节区名称</span></div><div class="line">              <span class="comment">//IMAGE_SIZEOF_SHORT_NAME=8</span></div><div class="line">      <span class="keyword">union</span> &#123;</div><div class="line">        DWORD PhysicalAddress;    <span class="comment">//物理地址</span></div><div class="line">        DWORD VirtualSize;    <span class="comment">//内存中节区所占大小</span></div><div class="line">      &#125;Misc;</div><div class="line">      DWORD VirtualAddress;    <span class="comment">//内存中节区起始地址</span></div><div class="line">      DOWRD SizeOfRawData;    <span class="comment">//磁盘文件中节区所占大小</span></div><div class="line">      DOWRD PointerToRawData;    <span class="comment">//磁盘文件中节区起始位置偏移量</span></div><div class="line">      DWORD PointerToRelocations;    <span class="comment">//重定位的偏移</span></div><div class="line">      DWORD PointerToLinenumbers;    <span class="comment">//行号表的偏移</span></div><div class="line">      WORD NumberOfRelocations;    <span class="comment">//重定位项数目</span></div><div class="line">      WORD NumberOfLinenumbers;    <span class="comment">//行号表的数目</span></div><div class="line">      DWORD Characteristics;    <span class="comment">//节区属性</span></div><div class="line">&#125; IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER;</div></pre></td></tr></table></figure>
+<h3 id="characteristics"><a href="#characteristics" class="headerlink" title="characteristics"></a>characteristics</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_TYPE_NO_PAD 0x00000008</span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_CNT_CODE 0x00000020    <span class="comment">//该段是代码</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_CNT_INITIALIZED_DATA 0x00000040    <span class="comment">//数据段</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_CNT_UNINITIALIZED_DATA 0x00000080    <span class="comment">//bss段</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_LNK_OTHER 0x00000100</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_LNK_INFO 0x00000200    <span class="comment">//该段包含的是注释或其他信息</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_LNK_REMOVE 0x00000800    <span class="comment">//链接后抛弃</span></span></div><div class="line">...</div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_LNK_NRELOC_OVFL 0x01000000</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_MEM_DISCARDABLE 0x02000000</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_MEM_NOT_CACHED 0x04000000</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_MEM_NOT_PAGED 0x08000000</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_MEM_SHARED 0x10000000    <span class="comment">//共享段</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_MEM_EXECUTE 0x20000000    <span class="comment">//该段在内存中可执行</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_MEM_READ 0x40000000    <span class="comment">//该段在内存中是可读的</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_MEM_WRITE 0x80000000    <span class="comment">//该段在内存中可写</span></span></div><div class="line"></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_SCN_SCALE_INDEX 0x00000001</span></div></pre></td></tr></table></figure>
+<h2 id="Other"><a href="#Other" class="headerlink" title="Other"></a>Other</h2><ul>
+<li>.drectve段— 链接指示信息</li>
+<li>.debug段— 调试信息</li>
+<li>Symbol Table : 与ELF文件符号表基本相同, 主要有符号名/符号类型/所在位置等信息.</li>
+</ul>
+<h1 id="PE"><a href="#PE" class="headerlink" title="PE"></a>PE</h1><p>PE文件是COFF文件的扩展, 相比COFF文件, PE文件多了以下几个结构(并不完整):</p>
+<ul>
+<li>最头部添加DOS MZ可执行文件格式的文件头和桩代码</li>
+<li>IAMGE_FILE_HEADER 扩展成了IMAGE_NT_HEADER</li>
+</ul>
+<p>PE文件的大致结构结构如下图:</p>
+<p><img src="./pe.png" alt="PE_Header"></p>
+<h2 id="DOS-Header-amp-DOS-Stub"><a href="#DOS-Header-amp-DOS-Stub" class="headerlink" title="DOS Header &amp; DOS Stub"></a>DOS Header &amp; DOS Stub</h2><h3 id="DOS-Header"><a href="#DOS-Header" class="headerlink" title="DOS Header"></a>DOS Header</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line"> <span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">IMAGE_DOS_HEADER</span> &#123;</span></div><div class="line">    WORD e_magic;        <span class="comment">//MZ</span></div><div class="line">    WORD e_cblp;</div><div class="line">    WORD e_cp;</div><div class="line">    WORD e_crlc;</div><div class="line">    WORD e_cparhdr;</div><div class="line">    WORD e_minalloc;</div><div class="line">    WORD e_maxalloc;</div><div class="line">    WORD e_ss;</div><div class="line">    WORD e_sp;</div><div class="line">    WORD e_csum;</div><div class="line">    WORD e_ip;        <span class="comment">//指向向程序入口段地址</span></div><div class="line">    WORD e_cs;        <span class="comment">//指向程序入口偏移地址</span></div><div class="line">    WORD e_lfarlc;</div><div class="line">    WORD e_ovno;</div><div class="line">    WORD e_res[<span class="number">4</span>];</div><div class="line">    WORD e_oemid;</div><div class="line">    WORD e_oeminfo;</div><div class="line">    WORD e_res2[<span class="number">10</span>];</div><div class="line">    LONG e_lfanew;    <span class="comment">//PE文件头在文件中的偏移</span></div><div class="line">&#125; IMAGE_DOS_HEADER,*PIMAGE_DOS_HEADER;</div></pre></td></tr></table></figure>
+<h3 id="DOS-Stub"><a href="#DOS-Stub" class="headerlink" title="DOS Stub"></a>DOS Stub</h3><p>这是一段能够在DOS下运行的代码, 这段代码的功能是输出<code>This program cannot be run in DOS mode</code>, 然后退出程序.</p>
+<h2 id="NT-Header"><a href="#NT-Header" class="headerlink" title="NT Header"></a>NT Header</h2><p>IMAGE_NT_HEADER是PE真正的文件头, 它包含一个PE签名和两个结构体— <code>IMAGE_FILE_HEADER</code>和<code>IMAGE_OPTIONAL_HEADER</code>.  其中的 <code>IMAGE_FILE_HEADER</code>和COFF文件中的相同. PE签名的值恒为<code>PE\x00\x00</code>.</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">IMAGE_NT_HEADERS</span> &#123;</span></div><div class="line">      DWORD Signature;</div><div class="line">      IMAGE_FILE_HEADER FileHeader;</div><div class="line">      IMAGE_OPTIONAL_HEADER32 OptionalHeader;</div><div class="line">    &#125; IMAGE_NT_HEADERS32,*PIMAGE_NT_HEADERS32;</div></pre></td></tr></table></figure>
+<h3 id="Image-Optional-Header"><a href="#Image-Optional-Header" class="headerlink" title="Image Optional Header"></a>Image Optional Header</h3><figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">IMAGE_OPTIONAL_HEADER</span> &#123;</span></div><div class="line">    WORD Magic;        <span class="comment">////PE32中为10B，PE32+中为20B</span></div><div class="line">      ...</div><div class="line">    DWORD AddressOfEntryPoint;    <span class="comment">////持有EP的RVA值，程序最先执行的代码的地址</span></div><div class="line">    DWORD BaseOfCode;</div><div class="line">    DWORD BaseOfData;</div><div class="line">    DWORD ImageBase;    <span class="comment">//文件的优先装入地址，EXE、DLL到用户内存0～7FFFFFFF</span></div><div class="line">                <span class="comment">//SYS到内核内存80000000~FFFFFFFF</span></div><div class="line">                <span class="comment">//典型地，EXE：00400000；DLL：10000000</span></div><div class="line">    DWORD SectionAlignment;    <span class="comment">//节区在内存中的最小单位</span></div><div class="line">    DWORD FileAlignment;    <span class="comment">//节区在磁盘文件中的最小单位</span></div><div class="line">    ...</div><div class="line">    DWORD SizeOfImage;        <span class="comment">//PE Image在虚拟内存中所占的空间大小</span></div><div class="line">    DWORD SizeOfHeaders;    <span class="comment">//整个PE头的大小，必须是FileAlignment的整数倍</span></div><div class="line">    DWORD CheckSum;    <span class="comment">//区分系统驱动文件*.sys与普通可执行文件*.exe, *.dll</span></div><div class="line">    WORD Subsystem;</div><div class="line">    ...</div><div class="line">    DWORD NumberOfRvaAndSizes;    <span class="comment">//到此处总共有0x60个字节</span></div><div class="line">    IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES];</div><div class="line">  <span class="comment">/*特别注意：</span></div><div class="line"><span class="comment">  DataDirectory[0]=EXPORT Directory </span></div><div class="line"><span class="comment">  DataDirectory[1]=IMPORT Directory</span></div><div class="line"><span class="comment">  */</span></div><div class="line">&#125; IMAGE_OPTIONAL_HEADER32,*PIMAGE_OPTIONAL_HEADER32;</div></pre></td></tr></table></figure>
+<ul>
+<li>Data Dtirectory</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line"><span class="keyword">typedef</span> <span class="class"><span class="keyword">struct</span> _<span class="title">IMAGE_DATA_DIRECTORY</span> &#123;</span></div><div class="line">  DWORD VirtualAddress;</div><div class="line">  DWORD Size;</div><div class="line">&#125; IMAGE_DATA_DIRECTORY,*PIMAGE_DATA_DIRECTORY;</div></pre></td></tr></table></figure>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_EXPORT 0    <span class="comment">//导出表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_IMPORT 1    <span class="comment">//导入表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_RESOURCE 2    <span class="comment">//资源表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_EXCEPTION 3    <span class="comment">//异常表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_SECURITY 4</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_BASERELOC 5</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_DEBUG 6    <span class="comment">//调试信息表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_ARCHITECTURE 7</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_GLOBALPTR 8</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_TLS 9    <span class="comment">//线程私有存储</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG 10</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT 11</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_IAT 12    <span class="comment">//导入地址表</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT 13</span></div><div class="line"><span class="meta">#<span class="meta-keyword">define</span> IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR 14</span></div></pre></td></tr></table></figure>
+<h1 id="REFRENCE"><a href="#REFRENCE" class="headerlink" title="REFRENCE"></a>REFRENCE</h1><ul>
+<li>《程序员的自我修养— 链接、装载与库》</li>
+</ul>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/ELF/">ELF</a>
+            
+              <a href="/tags/link-load/">link&load</a>
+            
+              <a href="/tags/Windows/">Windows</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/11/27/Understand-glibc-malloc/">
+        <span class="next-text nav-default">Understand Glibc Malloc</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+    
+    2017
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+  
+
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>
