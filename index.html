@@ -191,6 +191,60 @@
     <header class="post-header">
       <h1 class="post-title">
         
+          <a class="post-link" href="/2019/01/05/Classic-Stack-Based-Buffer-Overflow/">Classic Stack Based Buffer Overflow</a>
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2019-01-05
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/Translate/">Translate</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        
+        
+          
+        
+
+        
+          <p>Posted on <a href="https://sploitfun.wordpress.com/2015/05/08/classic-stack-based-buffer-overflow/" target="_blank" rel="external">May 8, 2015</a> by <a href="https://sploitfun.wordpress.com/author/sploitfun/" target="_blank" rel="external">sploitfun</a></p>
+<blockquote>
+<p>前文部分是翻译, 后文译者扩展了部分内容</p>
+</blockquote>
+<p><em>VM Setup</em>: Ubuntu 12.04 (x86)</p>
+<p>这是该系列中最简单的一篇文章，并且，你已经能够在网上找到许多内容相似的文章。尽管如此，我仍然想要在自己博客上也写一篇关于它的文章，因为这将会为我之后要发表的post打下基础。</p>
+          <div class="read-more">
+            <a href="/2019/01/05/Classic-Stack-Based-Buffer-Overflow/" class="read-more-link">Read more..</a>
+          </div>
+        
+      
+    </div>
+
+    
+
+    
+
+  </article>
+
+    
+      
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
           <a class="post-link" href="/2017/12/08/windows-PE-COFF/">Windows PE/COFF</a>
         
       </h1>
@@ -639,59 +693,6 @@
   </article>
 
     
-      
-  <article class="post">
-    <header class="post-header">
-      <h1 class="post-title">
-        
-          <a class="post-link" href="/2017/09/05/Debug-Shellcode/">Debug Shellcode</a>
-        
-      </h1>
-
-      <div class="post-meta">
-        <span class="post-time">
-          2017-09-05
-        </span>
-        
-          <div class="post-category">
-            
-              <a href="/categories/RE-note/">RE note</a>
-            
-          </div>
-        
-      </div>
-    </header>
-
-    
-    
-
-    <div class="post-content">
-      
-        
-        
-          
-        
-
-        
-          <p>记录几个自己碰到的关于shellcode的问题, 一个都没解决…如果有知道解决方法的请发我邮箱(邮箱在页面最下方), 谢谢!</p>
-<h2 id="shellcode-1"><a href="#shellcode-1" class="headerlink" title="shellcode 1"></a>shellcode 1</h2><p>最简单的shellcode形式大概就是直接调用execve(“/bin/sh”, {“/bin/sh”, NULL}, NULL)系统调用了吧…并不是十分清楚, 所以如果说错的话就当我没说…</p>
-<h3 id="C-code"><a href="#C-code" class="headerlink" title="C code"></a>C code</h3><p>先从C代码开始:</p>
-<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdlib.h&gt;</span></span></div><div class="line">main()&#123;</div><div class="line">    <span class="keyword">char</span> *argv[] = &#123;<span class="string">"bin/sh"</span>, <span class="literal">NULL</span>&#125;;</div><div class="line">    setuid(<span class="number">0</span>, <span class="number">0</span>);</div><div class="line">    execve(<span class="string">"/bin/sh"</span>, argv, <span class="literal">NULL</span>);</div><div class="line">&#125;</div></pre></td></tr></table></figure>
-<p>编译运行以上程序, 我们就能够得到一个shell了.<br>
-          <div class="read-more">
-            <a href="/2017/09/05/Debug-Shellcode/" class="read-more-link">Read more..</a>
-          </div>
-        
-      
-    </div>
-
-    
-
-    
-
-  </article>
-
-    
   </section>
 
   
@@ -769,8 +770,10 @@
   <span class="copyright-year">
     
     &copy; 
+     
+      2017 - 
     
-    2017
+    2019
 
     <span class="heart">
       <i class="iconfont icon-heart"></i>

